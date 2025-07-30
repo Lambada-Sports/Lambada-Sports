@@ -1,37 +1,56 @@
 import { useEffect, useState } from "react";
 
-const mockCategories = [
-  { code: "TO", description: "Men" },
-  { code: "BL", description: "Women" },
-  { code: "BS", description: "Kids" },
-  { code: "AC", description: "Unisex" },
+const Types = [
+  { description: "Men" },
+  { description: "Women" },
+  { description: "Kids" },
+  { description: "Unisex" },
 ];
 
 const AddProduct = ({ onClose, onSave }) => {
-  const [categories, setCategories] = useState([]);
+  const [types, setTypes] = useState([]);
 
   useEffect(() => {
     setTimeout(() => {
-      setCategories(mockCategories);
+      setTypes(Types);
     }, 300); // mock delay
   }, []);
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     const form = e.target;
+
     const newProduct = {
       name: form.name.value,
       description: form.description.value,
       price: parseFloat(form.price.value),
-      category_code: form.category.value,
+      type: form.category.value,
       sport: form.sport.value,
       status: form.status.value,
       stock: parseInt(form.stock.value),
-      sold: 0,
     };
 
-    onSave(newProduct);
-    onClose();
+    try {
+      const response = await fetch(
+        "http://localhost:5000/api/admin/products/add",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(newProduct),
+        }
+      );
+
+      if (!response.ok) throw new Error("Failed to add product");
+
+      const savedProduct = await response.json();
+      onSave(savedProduct);
+      onClose();
+    } catch (error) {
+      console.error("Error adding product:", error);
+      alert("Failed to add product. Please try again.");
+    }
   };
 
   return (
@@ -112,11 +131,9 @@ const AddProduct = ({ onClose, onSave }) => {
                 required
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               >
-                <option value="">Select type</option>
-                {categories.map((cat) => (
-                  <option key={cat.code} value={cat.code}>
-                    {cat.description}
-                  </option>
+                <option value="">Select Type</option>
+                {types.map((type) => (
+                  <option>{type.description}</option>
                 ))}
               </select>
             </div>
