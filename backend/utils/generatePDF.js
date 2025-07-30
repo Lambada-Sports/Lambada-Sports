@@ -1,7 +1,8 @@
 const PDFDocument = require("pdfkit");
-const getStream = require("get-stream");
 
 exports.generatePDF = async (order, items) => {
+  const getStream = await import("get-stream").then((mod) => mod.default);
+
   const doc = new PDFDocument();
   const buffers = [];
 

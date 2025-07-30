@@ -1,5 +1,5 @@
 /* eslint-disable no-unused-vars */
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   Search,
   Plus,
@@ -27,6 +27,7 @@ const Products = () => {
   const [sortBy, setSortBy] = useState("name");
   const [sortOrder, setSortOrder] = useState("asc");
   const [showAddModal, setShowAddModal] = useState(false);
+  const [productData, setProductData] = useState([]);
 
   const sidebarItems = [
     { icon: Home, label: "Dashboard", active: false },
@@ -37,7 +38,7 @@ const Products = () => {
     { icon: HelpCircle, label: "Help", active: false },
   ];
 
-  const productData = [
+  const mockData = [
     {
       id: 1,
       name: "Cricket Jersey",
@@ -124,6 +125,13 @@ const Products = () => {
     // Implement status change logic here
   };
 
+  useEffect(() => {
+    fetch("http://localhost:5000/api/admin/products")
+      .then((res) => res.json())
+      .then((data) => setProductData(data))
+      .catch((err) => console.error("Error fetching products:", err));
+  }, []);
+
   return (
     <div className="flex h-screen bg-gray-50">
       {/* Main Content */}
@@ -169,7 +177,7 @@ const Products = () => {
                 <p className="text-sm text-gray-500">Need restocking</p>
               </div>
 
-              <div className="bg-white p-6 rounded-lg shadow-sm border">
+              {/*<div className="bg-white p-6 rounded-lg shadow-sm border">
                 <h3 className="text-sm font-medium text-gray-600 mb-2">
                   Total Revenue
                 </h3>
@@ -184,7 +192,7 @@ const Products = () => {
                     .toLocaleString()}
                 </p>
                 <p className="text-sm text-gray-500">From all products</p>
-              </div>
+              </div>*/}
             </div>
 
             {/* Filters and Search */}
@@ -255,7 +263,7 @@ const Products = () => {
                       <AddProduct
                         onClose={() => setShowAddModal(false)}
                         onSave={(newProduct) => {
-                          console.log("New Product:", newProduct);
+                          setProductData((prev) => [newProduct, ...prev]);
                         }}
                       />
                     )}
