@@ -1,25 +1,24 @@
-import React, { useEffect, useState, useRef } from 'react';
-import { useParams } from 'react-router-dom';
-import Navbar from './Navbar';
-import './carousel.css';
-import { useNavigate } from 'react-router-dom';
-
-
+/* eslint-disable no-unused-vars */
+import React, { useEffect, useState, useRef } from "react";
+import { useParams } from "react-router-dom";
+import Navbar from "./Navbar";
+import "./carousel.css";
+import { useNavigate } from "react-router-dom";
 
 const jerseyModels = {
   cricket: {
     mens: [
-      { name: 'Half Sleeve', image: '/assets/cricket/half.png' },
-      { name: 'Full Sleeve', image: '/assets/cricket/full.png' },
-      { name: 'Arm Cut', image: '/assets/cricket/arm.png' },
-      { name: 'Bottom', image: '/assets/cricket/bottom.png' },
-      { name: 'Shorts', image: '/assets/cricket/shorts.png' },
+      { name: "Half Sleeve", image: "/assets/cricket/half.png" },
+      { name: "Full Sleeve", image: "/assets/cricket/full.png" },
+      { name: "Arm Cut", image: "/assets/cricket/arm.png" },
+      { name: "Bottom", image: "/assets/cricket/bottom.png" },
+      { name: "Shorts", image: "/assets/cricket/shorts.png" },
     ],
   },
   basketball: {
     mens: [
-      { name: 'Sleeveless', image: '/assets/basketball/sleeveless.png' },
-      { name: 'Shorts', image: '/assets/basketball/shorts.png' },
+      { name: "Sleeveless", image: "/assets/basketball/sleeveless.png" },
+      { name: "Shorts", image: "/assets/basketball/shorts.png" },
     ],
   },
 };
@@ -36,23 +35,22 @@ export default function CustomizePage() {
 
   useEffect(() => {
     const timeout = setTimeout(() => {
-        setInitialAnimationDone(true);
-        setRotationAngle(-288);
-     
+      setInitialAnimationDone(true);
+      setRotationAngle(-288);
     }, 4000);
     return () => clearTimeout(timeout);
   }, []);
 
-    const handleLeft = () => {
+  const handleLeft = () => {
     if (initialAnimationDone) {
-        setRotationAngle(prev => prev + 72);
+      setRotationAngle((prev) => prev + 72);
     }
-    };
-    const handleRight = () => {
+  };
+  const handleRight = () => {
     if (initialAnimationDone) {
-        setRotationAngle(prev => prev - 72);
+      setRotationAngle((prev) => prev - 72);
     }
-    };
+  };
 
   return (
     <>
@@ -63,25 +61,36 @@ export default function CustomizePage() {
         </h1>
 
         {/* Arrows */}
-        <button onClick={handleLeft} className="absolute left-4 top-1/2 z-20 text-3xl"></button>
-        <button onClick={handleRight} className="absolute right-4 top-1/2 z-20 text-3xl">➡</button>
+        <button
+          onClick={handleLeft}
+          className="absolute left-4 top-1/2 z-20 text-3xl"
+        ></button>
+        <button
+          onClick={handleRight}
+          className="absolute right-4 top-1/2 z-20 text-3xl"
+        >
+          ➡
+        </button>
 
         <div
-          className={`carousel-container mt-36 ${animate ? 'animate-start-spin' : ''}`}
+          className={`carousel-container mt-36 ${
+            animate ? "animate-start-spin" : ""
+          }`}
           ref={containerRef}
         >
           <div
-
-            className={`carousel ${!initialAnimationDone ? 'animate-rotateOnce' : ''}`}
+            className={`carousel ${
+              !initialAnimationDone ? "animate-rotateOnce" : ""
+            }`}
             style={{
-                transform: initialAnimationDone
+              transform: initialAnimationDone
                 ? `rotateY(${rotationAngle}deg)`
                 : undefined,
-                transition: initialAnimationDone ? 'transform 0.8s ease-in-out' : 'none',
+              transition: initialAnimationDone
+                ? "transform 0.8s ease-in-out"
+                : "none",
             }}
           >
-
-          
             {styles.map((style, idx) => (
               <div className="card" key={idx}>
                 <div className="flex flex-col items-center">
@@ -91,7 +100,10 @@ export default function CustomizePage() {
                     className="w-24 h-24 object-contain mb-2"
                   />
                   <p className="text-sm font-semibold mb-2">{style.name}</p>
-                  <button onClick={() => navigate('/design-editor')} className="bg-yellow-400 text-black px-3 py-1 rounded hover:bg-yellow-500 transition-all">
+                  <button
+                    onClick={() => navigate("/design-editor")}
+                    className="bg-yellow-400 text-black px-3 py-1 rounded hover:bg-yellow-500 transition-all"
+                  >
                     Customize
                   </button>
                 </div>

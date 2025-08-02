@@ -1,6 +1,12 @@
+
+/* eslint-disable react-hooks/exhaustive-deps */
+/* eslint-disable no-unused-vars */
+import { useEffect, useRef, useState } from "react";
+import ElementsPanel from "./ElementsPanel";
 import { useEffect, useRef, useState } from 'react'
 import ElementsPanel from './ElementsPanel' // correct path use pannunga
 import { useNavigate, useLocation } from 'react-router-dom'
+
 
 export default function DesignEditor({ userImage, setSelectedDesignURL }) {
   const canvasRef = useRef(null)

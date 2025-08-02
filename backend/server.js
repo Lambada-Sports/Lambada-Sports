@@ -4,10 +4,12 @@ require("dotenv").config();
 const adminProductRoutes = require("./routes/adminProductRoutes");
 const manufacturerOrderRoutes = require("./routes/manufacturerOrderRoutes");
 const customerRoutes = require("./routes/customerRoutes");
+const checkoutRoutes = require("./routes/checkoutRoutes");
 
 const app = express();
 
 app.use(cors());
+app.use("/api/order", checkoutRoutes);
 app.use(express.json());
 
 app.use("/api/admin", adminProductRoutes);
