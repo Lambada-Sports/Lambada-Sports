@@ -1,19 +1,18 @@
-import React, { useState } from 'react';
-import Navbar from './Navbar';
-import { useNavigate } from 'react-router-dom';
-import { ChevronLeft, ChevronRight, X } from 'lucide-react';
+import React, { useState } from "react";
+import Navbar from "./Navbar";
+import { useNavigate } from "react-router-dom";
+import { ChevronLeft, ChevronRight, X } from "lucide-react";
 
 export default function SelectSportPage() {
   const navigate = useNavigate();
 
   const sports = [
-    { name: 'Football', image: '/assets/football.png' },
-    { name: 'Cricket', image: '/assets/cricket.png' },
-    { name: 'Rugby', image: '/assets/rugby.png' },
-    { name: 'Volleyball', image: '/assets/volleyball.png' },
-    { name: 'Basketball', image: '/assets/basketball.png' },
-    { name: 'Hockey', image: '/assets/hockey.png' },
-    { name: 'Kabaddi', image: '/assets/kabaddi.png' },
+    { name: "Football", image: "/assets/football.png" },
+    { name: "Cricket", image: "/assets/cricket.png" },
+    { name: "Rugby", image: "/assets/rugby.png" },
+    { name: "Volleyball", image: "/assets/volleyball.png" },
+    { name: "Basketball", image: "/assets/basketball.png" },
+    { name: "Hockey", image: "/assets/hockey.avif" },
   ];
 
   const [startIndex, setStartIndex] = useState(0);
@@ -73,13 +72,13 @@ export default function SelectSportPage() {
                 <div
                   key={index}
                   className={`w-[300px] h-[480px] flex-shrink-0 transform transition-all duration-300 hover:-translate-y-2 hover:scale-105 ${
-                    flippedIndex === index ? 'animate-border-glow' : ''
+                    flippedIndex === index ? "animate-border-glow" : ""
                   }`}
                 >
                   <div className="relative w-full h-full [perspective:1000px]">
                     <div
                       className={`relative w-full h-full duration-700 [transform-style:preserve-3d] ${
-                        flippedIndex === index ? 'rotate-y-180' : ''
+                        flippedIndex === index ? "rotate-y-180" : ""
                       }`}
                     >
                       {/* Front */}
@@ -122,7 +121,7 @@ export default function SelectSportPage() {
 
                         {/* Fit options */}
                         <div className="grid grid-cols-2 gap-2">
-                          {['Mens', 'Womens', 'Kids', 'Unisex'].map((fit) => (
+                          {["Mens", "Womens", "Kids", "Unisex"].map((fit) => (
                             <button
                               key={fit}
                               onClick={() => handleFitSelect(sport.name, fit)}
