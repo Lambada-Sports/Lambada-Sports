@@ -4,6 +4,7 @@ import Navbar from "./Navbar";
 import { useRef } from "react";
 import { TypeAnimation } from "react-type-animation";
 import { useNavigate } from "react-router-dom";
+import Footer from "./Footer";
 
 export default function HomePage() {
   const navigate = useNavigate();
@@ -147,13 +148,7 @@ export default function HomePage() {
             ))}
           </div>
         </section>{" "}
-        {/* Footer Links */}
-        <footer className="text-center py-10 text-sm text-gray-700 space-y-1">
-          <div>About Us</div>
-          <div>Gallery</div>
-          <div>FAQ</div>
-          <div>Contact Us</div>
-        </footer>
+        <Footer />
       </div>
     </>
   );
