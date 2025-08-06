@@ -185,7 +185,7 @@ export default function DesignEditor({ userImage, setSelectedDesignURL }) {
     console.log(" tempCtx attached?", !!active._tempCtx);
 
     if (!active._tempCanvas || !active._tempCtx) {
-      console.warn("⚠️ Cannot erase: tempCanvas or ctx missing");
+      console.warn(" Cannot erase: tempCanvas or ctx missing");
       return;
     }
 
@@ -236,7 +236,7 @@ export default function DesignEditor({ userImage, setSelectedDesignURL }) {
         }
 
         const updatedURL = active._tempCanvas.toDataURL();
-        console.log("🔄 Updated image base64 size:", updatedURL.length);
+        console.log(" Updated image base64 size:", updatedURL.length);
 
         active.setSrc(updatedURL, () => {
           console.log(" Image updated with erased data");
@@ -354,14 +354,6 @@ export default function DesignEditor({ userImage, setSelectedDesignURL }) {
     canvas.loadFromJSON(last, () => canvas.renderAll());
   };
 
-  // const handleExport = () => {
-  //   if (canvas) {
-  //     const dataURL = canvas.toDataURL({ format: 'png', quality: 1 })
-  //     setSelectedDesignURL(dataURL)
-  //     canvas.remove(fabricImg)
-  //   }
-  // }
-
   // Apply Design - Updates the 3D model
   const handleApplyDesign = () => {
     if (canvas) {
@@ -470,20 +462,6 @@ export default function DesignEditor({ userImage, setSelectedDesignURL }) {
       <canvas ref={canvasRef} width={750} height={700} />
       <div className="mt-4 flex flex-wrap gap-2">
         <div className="mb-4">
-          {/* <input
-        type="file"
-        accept="image/*"
-        onChange={(e) => {
-          const file = e.target.files[0]
-          if (file) {
-            const reader = new FileReader()
-            reader.onload = () => {
-              // Directly update image
-              setFinalImage(reader.result)
-            }
-            reader.readAsDataURL(file)
-          } */}
-
           <input
             type="file"
             accept="image/*"

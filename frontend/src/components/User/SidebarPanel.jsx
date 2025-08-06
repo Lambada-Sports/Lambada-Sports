@@ -19,7 +19,7 @@ export default function SidebarPanel({
 
   return (
     <div>
-      <h1 className="text-xl font-bold mb-4">Soccer Jersey F3 Basic</h1>
+      <h1 className="text-xl font-bold mb-4">Cricket Jersey</h1>
 
       <div className="flex space-x-2 mb-4">
         {["Design", "Colors", "Text", "Logos", "Custom"].map((t) => (
