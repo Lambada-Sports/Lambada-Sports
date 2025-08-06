@@ -8,6 +8,9 @@ export default function SidebarPanel({
   setSelectedColor,
   selectedDesignURL,
   setSelectedDesignURL,
+  selectedSport,
+  selectedFit,
+  selectedStyle,
   setUserDesign,
 }) {
   const [tab, setTab] = useState("Design");
@@ -54,6 +57,9 @@ export default function SidebarPanel({
             setUserDesign(finalImg);
             setShowEditor(false);
           }}
+          sport={selectedSport}
+          fit={selectedFit}
+          style={selectedStyle}
         />
       )}
     </div>

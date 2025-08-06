@@ -6,6 +6,7 @@ import AboutPage from "./components/User/AboutPage";
 import SelectSportPage from "./components/User/SelectSportPage";
 import CustomizePage from "./components/User/CustomizePage";
 import OrderFormPage from "./components/User/OrderFormPage";
+import CartPage from "./components/User/Cartpage";
 import ContactPage from "./components/User/ContactPage";
 import FAQ from "./components/User/FAQ";
 
@@ -30,6 +31,7 @@ export default function App() {
           <Route path="/customize/:sport/:fit" element={<CustomizePage />} />
           <Route path="/design-editor" element={<Customisation />} />
           <Route path="/order-form" element={<OrderFormPage />} />
+          <Route path="/cart" element={<CartPage />} />
           <Route path="/about" element={<AboutPage />} />
           <Route path="/contact" element={<ContactPage />} />
           <Route path="/faq" element={<FAQ />} />

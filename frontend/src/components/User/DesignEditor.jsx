@@ -30,14 +30,13 @@ export default function DesignEditor({ userImage, setSelectedDesignURL }) {
     setRedoStack([]);
   };
 
-  // 🧱 Init Canvas
   // Canvas init
   useEffect(() => {
     const init = async () => {
       const fabricModule = await import("fabric");
       const fabric =
         fabricModule.fabric || fabricModule.default || fabricModule;
-      window.fabric = fabric; // 👈
+      window.fabric = fabric;
 
       setFabricInstance(fabric);
 
@@ -81,28 +80,28 @@ export default function DesignEditor({ userImage, setSelectedDesignURL }) {
     if (file) {
       const reader = new FileReader();
       reader.onload = () => {
-        const imgData = reader.result; // ✅ base64 format
+        const imgData = reader.result; //  base64 format
         setEditorImage(imgData);
       };
       reader.readAsDataURL(file);
     }
   };
 
-  // 🖼️ Load User Image jjk
+  //  Load User Image jjk
   useEffect(() => {
     const imageToUse = editorImage || userImage;
 
     if (fabricInstance && canvas && imageToUse) {
-      console.log("🟡 Step 1: fabricInstance, canvas, userImage available");
-      console.log("🔹 userImage =", userImage);
+      console.log(" Step 1: fabricInstance, canvas, userImage available");
+      console.log(" userImage =", userImage);
 
       const img = new Image();
       img.crossOrigin = "anonymous";
       img.src = imageToUse;
 
       img.onload = () => {
-        console.log("✅ Step 2: HTML <img> loaded");
-        console.log("📏 Image size =", img.width, img.height);
+        console.log("Step 2: HTML <img> loaded");
+        console.log(" Image size =", img.width, img.height);
 
         const tempCanvas = document.createElement("canvas");
         tempCanvas.width = img.width;
@@ -118,7 +117,7 @@ export default function DesignEditor({ userImage, setSelectedDesignURL }) {
         const left = (canvas.width - img.width * scale) / 2;
         const top = (canvas.height - img.height * scale) / 2;
 
-        console.log("📐 Calculated position & scale:", { scale, left, top });
+        console.log(" Calculated position & scale:", { scale, left, top });
 
         const fabricImg = new window.fabric.Image(img, {
           left,
@@ -130,18 +129,18 @@ export default function DesignEditor({ userImage, setSelectedDesignURL }) {
           selectable: true,
           opacity: 0.7,
         });
-        console.log("🔍 testImg type =", fabricImg.type);
+        console.log(" testImg type =", fabricImg.type);
         console.log(
-          "🔍 testImg instanceof fabric.Image =",
+          " testImg instanceof fabric.Image =",
           fabricImg instanceof window.fabric.Image
         );
 
         fabricImg._tempCanvas = tempCanvas;
         fabricImg._tempCtx = ctx;
-        console.log("🧪 attaching tempCanvas:", !!tempCanvas);
-        console.log("🧪 attaching ctx:", !!ctx);
+        console.log(" attaching tempCanvas:", !!tempCanvas);
+        console.log(" attaching ctx:", !!ctx);
         console.log(
-          "🧪 attached to fabricImg:",
+          " attached to fabricImg:",
           fabricImg._tempCanvas,
           fabricImg._tempCtx
         );
@@ -157,13 +156,13 @@ export default function DesignEditor({ userImage, setSelectedDesignURL }) {
         setActiveImage(fabricImg);
         saveToHistory();
 
-        console.log("🎉 Step 3: Fabric image added to canvas and ready!");
-        console.log("🧪 fabricImg type =", fabricImg.type);
-        console.log("🧪 has moveTo =", typeof fabricImg.bringToFront);
+        console.log(" Step 3: Fabric image added to canvas and ready!");
+        console.log(" fabricImg type =", fabricImg.type);
+        console.log(" has moveTo =", typeof fabricImg.bringToFront);
       };
 
       img.onerror = () => {
-        console.error("❌ Image load error! Check CORS or base64 issues.");
+        console.error(" Image load error! Check CORS or base64 issues.");
       };
     }
   }, [userImage, canvas, fabricInstance, editorImage]);
@@ -172,18 +171,18 @@ export default function DesignEditor({ userImage, setSelectedDesignURL }) {
   const handleErase = () => {
     if (!canvas || !fabricInstance || !activeImage || !isImageLoaded) {
       console.warn(
-        "❌ Cannot erase: Missing required setup (canvas/fabricInstance/activeImage/imageLoaded)."
+        " Cannot erase: Missing required setup (canvas/fabricInstance/activeImage/imageLoaded)."
       );
       return;
     }
 
     const active = activeImage;
-    console.log("🧪 Erase triggered");
-    console.log("📌 Canvas exists?", !!canvas);
-    console.log("📌 Fabric instance exists?", !!fabricInstance);
-    console.log("📌 Active Image exists?", !!active);
-    console.log("📌 tempCanvas attached?", !!active._tempCanvas);
-    console.log("📌 tempCtx attached?", !!active._tempCtx);
+    console.log(" Erase triggered");
+    console.log(" Canvas exists?", !!canvas);
+    console.log(" Fabric instance exists?", !!fabricInstance);
+    console.log(" Active Image exists?", !!active);
+    console.log(" tempCanvas attached?", !!active._tempCanvas);
+    console.log(" tempCtx attached?", !!active._tempCtx);
 
     if (!active._tempCanvas || !active._tempCtx) {
       console.warn("⚠️ Cannot erase: tempCanvas or ctx missing");
@@ -208,15 +207,15 @@ export default function DesignEditor({ userImage, setSelectedDesignURL }) {
       const x = (pointer.x - active.left) / active.scaleX;
       const y = (pointer.y - active.top) / active.scaleY;
 
-      console.log("🎯 Pointer on canvas:", pointer);
+      console.log(" Pointer on canvas:", pointer);
       console.log(
-        "🎯 Image position and scale:",
+        " Image position and scale:",
         active.left,
         active.top,
         active.scaleX,
         active.scaleY
       );
-      console.log("🎯 Final calculated (x, y):", x, y);
+      console.log(" Final calculated (x, y):", x, y);
 
       if (lastPoint) {
         const dx = x - lastPoint.x;
@@ -240,7 +239,7 @@ export default function DesignEditor({ userImage, setSelectedDesignURL }) {
         console.log("🔄 Updated image base64 size:", updatedURL.length);
 
         active.setSrc(updatedURL, () => {
-          console.log("✅ Image updated with erased data");
+          console.log(" Image updated with erased data");
           canvas.renderAll();
         });
       }
@@ -249,26 +248,26 @@ export default function DesignEditor({ userImage, setSelectedDesignURL }) {
     };
 
     const downHandler = () => {
-      console.log("🖱️ Mouse Down - Start Drawing Erase");
+      console.log(" Mouse Down - Start Drawing Erase");
       lastPoint = null;
       canvas.on("mouse:move", moveHandler);
     };
 
     const upHandler = () => {
-      console.log("🖱️ Mouse Up - Stop Drawing Erase");
+      console.log(" Mouse Up - Stop Drawing Erase");
       canvas.off("mouse:move", moveHandler);
       active.selectable = true;
       canvas.selection = true;
       canvas.defaultCursor = "default";
       setIsErasing(false);
       saveToHistory();
-      console.log("🛑 Erase mode stopped");
+      console.log(" Erase mode stopped");
     };
 
     canvas.on("mouse:down", downHandler);
     canvas.on("mouse:up", upHandler);
 
-    console.log("👆 moveHandler attached");
+    console.log(" moveHandler attached");
   };
 
   const handleStopErase = () => {
@@ -280,10 +279,10 @@ export default function DesignEditor({ userImage, setSelectedDesignURL }) {
     canvas.off("mouse:down");
     canvas.off("mouse:up");
     if (activeImage) activeImage.selectable = true;
-    console.log("🛑 Erase mode stopped");
+    console.log(" Erase mode stopped");
   };
 
-  // ✂️ Crop
+  //  Crop
   const handleStartCrop = () => {
     const active = canvas.getActiveObject();
     if (!active || active.type !== "image") return;
@@ -363,7 +362,28 @@ export default function DesignEditor({ userImage, setSelectedDesignURL }) {
   //   }
   // }
 
-  const handleExport = () => {
+  // Apply Design - Updates the 3D model
+  const handleApplyDesign = () => {
+    if (canvas) {
+      canvas.discardActiveObject();
+      canvas.renderAll();
+
+      const dataURL = canvas.toDataURL({ format: "png", quality: 1 });
+      setSelectedDesignURL(dataURL); // This updates the 3D model
+      if (activeImage) {
+        canvas.remove(activeImage);
+        setActiveImage(null);
+        setIsImageLoaded(false);
+      }
+      setEditorImage(null);
+      setIsModified(false);
+      canvas.renderAll();
+      console.log(" Design applied to 3D model");
+    }
+  };
+
+  // Save Design - Goes to order form
+  const handleSaveDesign = () => {
     if (canvas) {
       canvas.discardActiveObject();
       canvas.renderAll();
@@ -374,13 +394,13 @@ export default function DesignEditor({ userImage, setSelectedDesignURL }) {
       setEditorImage(null);
       setIsModified(false);
 
-      // 🚀 Navigate to order form
+      //  Navigate to order form
       navigate("/order-form", {
         state: {
           designImage: dataURL,
-          sport,
-          fit,
-          style,
+          sport: sport,
+          fit: fit,
+          style: style,
         },
       });
     }
@@ -541,10 +561,16 @@ export default function DesignEditor({ userImage, setSelectedDesignURL }) {
           Redo
         </button>
         <button
-          onClick={handleExport}
+          onClick={handleApplyDesign}
+          className="bg-blue-600 text-white px-3 py-1 rounded"
+        >
+          Apply Design
+        </button>
+        <button
+          onClick={handleSaveDesign}
           className="bg-green-600 text-white px-3 py-1 rounded"
         >
-          {isModified ? "Apply Design" : "Save Design"}
+          Save Design
         </button>
       </div>
       <div className="flex items-center gap-2 mt-4">

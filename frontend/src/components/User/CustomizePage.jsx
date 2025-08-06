@@ -11,8 +11,8 @@ const jerseyModels = {
       { name: "Half Sleeve", image: "/assets/cricket/half.png" },
       { name: "Full Sleeve", image: "/assets/cricket/full.png" },
       { name: "Arm Cut", image: "/assets/cricket/arm.png" },
-      { name: "Bottom", image: "/assets/cricket/bottom.png" },
-      { name: "Shorts", image: "/assets/cricket/shorts.png" },
+      { name: "Bottom", image: "/assets/cricket/bottom.jpg" },
+      { name: "Shorts", image: "/assets/cricket/shorts.jpg" },
     ],
   },
   basketball: {
