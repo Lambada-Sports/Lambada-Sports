@@ -6,7 +6,7 @@ import AboutPage from "./components/User/AboutPage";
 import SelectSportPage from "./components/User/SelectSportPage";
 import CustomizePage from "./components/User/CustomizePage";
 import OrderFormPage from "./components/User/OrderFormPage";
-import CartPage from "./components/User/Cartpage";
+import CartPage from "./components/User/CartPage";
 import CheckoutPage from "./components/User/CheckoutPage";
 import ContactPage from "./components/User/ContactPage";
 import FAQ from "./components/User/FAQ";
