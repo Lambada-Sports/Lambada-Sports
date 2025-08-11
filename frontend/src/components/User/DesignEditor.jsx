@@ -1,8 +1,8 @@
-/* eslint-disable react-hooks/exhaustive-deps */
 /* eslint-disable no-unused-vars */
 import { useEffect, useRef, useState } from "react";
 import ElementsPanel from "./ElementsPanel";
 import { useNavigate, useLocation } from "react-router-dom";
+import { useAuth0 } from "@auth0/auth0-react";
 
 export default function DesignEditor({ userImage, setSelectedDesignURL }) {
   const canvasRef = useRef(null);
@@ -16,11 +16,57 @@ export default function DesignEditor({ userImage, setSelectedDesignURL }) {
   const [isImageLoaded, setIsImageLoaded] = useState(false);
   const [editorImage, setEditorImage] = useState(null);
   const [isModified, setIsModified] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const { getAccessTokenSilently, isAuthenticated, loginWithRedirect, user } =
+    useAuth0();
 
   const navigate = useNavigate();
   const location = useLocation();
 
-  const { sport, fit, style } = location.state || {};
+  const { sport, fit, style, product_id } = location.state || {};
+
+  // API function to save design
+  const saveDesignToAPI = async (designData) => {
+    if (!isAuthenticated) {
+      await loginWithRedirect();
+      return;
+    }
+
+    try {
+      const token = await getAccessTokenSilently();
+
+      const response = await fetch(
+        "http://localhost:5000/api/customer/design",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({
+            customer_id: user && user.sub,
+            product_id: product_id || 1,
+            design_data: designData,
+          }),
+        }
+      );
+
+      if (!response.ok) {
+        const errorText = await response.text();
+
+        throw new Error(
+          `HTTP error! status: ${response.status}, body: ${errorText}`
+        );
+      }
+
+      const result = await response.json();
+      console.log(" Design saved successfully:", result);
+      return result;
+    } catch (error) {
+      console.error(" Failed to save design:", error);
+      throw error;
+    }
+  };
 
   // Save to history
   const saveToHistory = () => {
@@ -65,16 +111,12 @@ export default function DesignEditor({ userImage, setSelectedDesignURL }) {
           scaleY: newCanvas.height / bgImg.height,
           selectable: false,
           evented: false,
-          absolutePositioned: true, //  clipping works properly
+          absolutePositioned: true,
         });
 
-        //  Apply as clipPath
         newCanvas.clipPath = fabricBg;
-
-        //  Optional: Add as background image visually
         newCanvas.backgroundImage = fabricBg;
         newCanvas.requestRenderAll();
-
         newCanvas.renderAll();
         saveToHistory();
       };
@@ -88,29 +130,25 @@ export default function DesignEditor({ userImage, setSelectedDesignURL }) {
     if (file) {
       const reader = new FileReader();
       reader.onload = () => {
-        const imgData = reader.result; // base64 format
+        const imgData = reader.result;
         setEditorImage(imgData);
       };
       reader.readAsDataURL(file);
     }
   };
 
-  // Load User Image jjk
+  // Load User Image
   useEffect(() => {
     const imageToUse = editorImage || userImage;
 
     if (fabricInstance && canvas && imageToUse) {
-      console.log(" Step 1: fabricInstance, canvas, userImage available");
-      console.log(" userImage =", userImage);
+      console.log("Step 1: fabricInstance, canvas, userImage available");
 
       const img = new Image();
       img.crossOrigin = "anonymous";
       img.src = imageToUse;
 
       img.onload = () => {
-        console.log(" Step 2: HTML <img> loaded");
-        console.log(" Image size =", img.width, img.height);
-
         const tempCanvas = document.createElement("canvas");
         tempCanvas.width = img.width;
         tempCanvas.height = img.height;
@@ -125,8 +163,6 @@ export default function DesignEditor({ userImage, setSelectedDesignURL }) {
         const left = (canvas.width - img.width * scale) / 2;
         const top = (canvas.height - img.height * scale) / 2;
 
-        console.log(" Calculated position & scale:", { scale, left, top });
-
         const fabricImg = new window.fabric.Image(img, {
           left,
           top,
@@ -137,40 +173,20 @@ export default function DesignEditor({ userImage, setSelectedDesignURL }) {
           selectable: true,
           opacity: 0.7,
         });
-        console.log(" testImg type =", fabricImg.type);
-        console.log(
-          " testImg instanceof fabric.Image =",
-          fabricImg instanceof window.fabric.Image
-        );
 
         fabricImg._tempCanvas = tempCanvas;
         fabricImg._tempCtx = ctx;
-        console.log(" attaching tempCanvas:", !!tempCanvas);
-        console.log(" attaching ctx:", !!ctx);
-        console.log(
-          " attached to fabricImg:",
-          fabricImg._tempCanvas,
-          fabricImg._tempCtx
-        );
 
         canvas.add(fabricImg);
         canvas.setActiveObject(fabricImg);
-        // canvas.remove(fabricImg)
-        // canvas.add(fabricImg)
-
         canvas.renderAll();
         setIsImageLoaded(true);
-
         setActiveImage(fabricImg);
         saveToHistory();
-
-        console.log(" Step 3: Fabric image added to canvas and ready!");
-        console.log(" fabricImg type =", fabricImg.type);
-        console.log(" has moveTo =", typeof fabricImg.bringToFront);
       };
 
       img.onerror = () => {
-        console.error(" Image load error! Check CORS or base64 issues.");
+        console.error("Image load error! Check CORS or base64 issues.");
       };
     }
   }, [userImage, canvas, fabricInstance, editorImage]);
@@ -193,9 +209,8 @@ export default function DesignEditor({ userImage, setSelectedDesignURL }) {
         const shapeRight = shapeLeft + shape.width * shape.scaleX;
         const shapeBottom = shapeTop + shape.height * shape.scaleY;
 
-        // Scale factor: canvas size vs mask image size
-        const scaleX = img.width / 750; //  canvas width
-        const scaleY = img.height / 700; //  canvas height
+        const scaleX = img.width / 750;
+        const scaleY = img.height / 700;
 
         let isOverTransparent = false;
 
@@ -216,31 +231,23 @@ export default function DesignEditor({ userImage, setSelectedDesignURL }) {
       };
 
       img.onerror = () => {
-        console.error(" Failed to load mask image");
+        console.error("Failed to load mask image");
         resolve(false);
       };
     });
   };
 
-  //  Eraser
+  // Eraser functionality
   const handleErase = () => {
     if (!canvas || !fabricInstance || !activeImage || !isImageLoaded) {
-      console.warn(
-        " Cannot erase: Missing required setup (canvas/fabricInstance/activeImage/imageLoaded)."
-      );
+      console.warn("Cannot erase: Missing required setup");
       return;
     }
 
     const active = activeImage;
-    console.log(" Erase triggered");
-    console.log(" Canvas exists?", !!canvas);
-    console.log(" Fabric instance exists?", !!fabricInstance);
-    console.log(" Active Image exists?", !!active);
-    console.log(" tempCanvas attached?", !!active._tempCanvas);
-    console.log(" tempCtx attached?", !!active._tempCtx);
 
     if (!active._tempCanvas || !active._tempCtx) {
-      console.warn(" Cannot erase: tempCanvas or ctx missing");
+      console.warn("Cannot erase: tempCanvas or ctx missing");
       return;
     }
 
@@ -262,16 +269,6 @@ export default function DesignEditor({ userImage, setSelectedDesignURL }) {
       const x = (pointer.x - active.left) / active.scaleX;
       const y = (pointer.y - active.top) / active.scaleY;
 
-      console.log(" Pointer on canvas:", pointer);
-      console.log(
-        " Image position and scale:",
-        active.left,
-        active.top,
-        active.scaleX,
-        active.scaleY
-      );
-      console.log(" Final calculated (x, y):", x, y);
-
       if (lastPoint) {
         const dx = x - lastPoint.x;
         const dy = y - lastPoint.y;
@@ -291,10 +288,8 @@ export default function DesignEditor({ userImage, setSelectedDesignURL }) {
         }
 
         const updatedURL = active._tempCanvas.toDataURL();
-        console.log("🔄 Updated image base64 size:", updatedURL.length);
 
         active.setSrc(updatedURL, () => {
-          console.log(" Image updated with erased data");
           canvas.renderAll();
         });
       }
@@ -303,26 +298,21 @@ export default function DesignEditor({ userImage, setSelectedDesignURL }) {
     };
 
     const downHandler = () => {
-      console.log(" Mouse Down - Start Drawing Erase");
       lastPoint = null;
       canvas.on("mouse:move", moveHandler);
     };
 
     const upHandler = () => {
-      console.log(" Mouse Up - Stop Drawing Erase");
       canvas.off("mouse:move", moveHandler);
       active.selectable = true;
       canvas.selection = true;
       canvas.defaultCursor = "default";
       setIsErasing(false);
       saveToHistory();
-      console.log(" Erase mode stopped");
     };
 
     canvas.on("mouse:down", downHandler);
     canvas.on("mouse:up", upHandler);
-
-    console.log(" moveHandler attached");
   };
 
   const handleStopErase = () => {
@@ -334,10 +324,9 @@ export default function DesignEditor({ userImage, setSelectedDesignURL }) {
     canvas.off("mouse:down");
     canvas.off("mouse:up");
     if (activeImage) activeImage.selectable = true;
-    console.log(" Erase mode stopped");
   };
 
-  //  Crop
+  // Crop functionality
   const handleStartCrop = () => {
     const active = canvas.getActiveObject();
     if (!active || active.type !== "image") return;
@@ -409,65 +398,133 @@ export default function DesignEditor({ userImage, setSelectedDesignURL }) {
     canvas.loadFromJSON(last, () => canvas.renderAll());
   };
 
-  //Apply Design (just update the state and 3D model)
+  // Apply Design (just update the state and 3D model)
   const handleApplyDesign = () => {
     if (canvas) {
       canvas.discardActiveObject();
       canvas.renderAll();
 
-      const dataURL = canvas.toDataURL({ format: "png", quality: 1 });
+      const dataURL = canvas.toDataURL({ format: "png", quality: 0.7 });
       setSelectedDesignURL(dataURL);
       setIsModified(false);
 
-      console.log(" Design applied to 3D view!");
+      console.log("🎨 Design applied to 3D view!");
     }
   };
 
-  // Save Design (and go to order-form)
+  // Save Design (save to API and navigate to order-form)
   const handleSaveDesign = async () => {
     if (!canvas) return;
 
-    //  Load the same mask image used in clipPath
-    const maskImg = new Image();
-    maskImg.crossOrigin = "anonymous";
-    maskImg.src = "/textures/sample.png";
+    setIsSaving(true); // Show loading state
 
-    maskImg.onload = async () => {
-      const objects = canvas.getObjects();
-      const shapesToRemove = [];
+    try {
+      // Load the same mask image used in clipPath
+      const maskImg = new Image();
+      maskImg.crossOrigin = "anonymous";
+      maskImg.src = "/textures/sample.png";
 
-      for (let obj of objects) {
-        // Only check for non-image shapes
-        if (obj.type !== "image") {
-          const isInvalid = await isShapeOverTransparentArea(obj, maskImg);
-          if (isInvalid) {
-            shapesToRemove.push(obj);
+      maskImg.onload = async () => {
+        try {
+          const objects = canvas.getObjects();
+          const shapesToRemove = [];
+
+          // Check for shapes over transparent areas
+          for (let obj of objects) {
+            if (obj.type !== "image") {
+              const isInvalid = await isShapeOverTransparentArea(obj, maskImg);
+              if (isInvalid) {
+                shapesToRemove.push(obj);
+              }
+            }
           }
+
+          // Remove all invalid shapes
+          shapesToRemove.forEach((obj) => canvas.remove(obj));
+
+          canvas.discardActiveObject();
+          canvas.renderAll();
+
+          // Generate design data
+          const dataURL = canvas.toDataURL({
+            format: "png",
+            quality: 0.7,
+            multiplier: 1,
+          });
+
+          // Prepare design data for API
+          const designData = {
+            canvasData: canvas.toJSON(), // Complete canvas state
+            imageURL: dataURL, // Final rendered image
+            sport,
+            fit,
+            style,
+            timestamp: new Date().toISOString(),
+            metadata: {
+              canvasWidth: canvas.width,
+              canvasHeight: canvas.height,
+              objectCount: canvas.getObjects().length,
+            },
+          };
+
+          console.log("💾 Saving design data:", designData);
+
+          // Save to API
+          const savedDesign = await saveDesignToAPI(designData);
+
+          console.log("✅ Design saved successfully with ID:", savedDesign.id);
+
+          // Navigate to order form with saved design ID
+          navigate("/order-form", {
+            state: {
+              designImage: dataURL,
+              sport,
+              fit,
+              style,
+              designId: savedDesign.id, // Include design ID for reference
+              product_id,
+            },
+          });
+        } catch (apiError) {
+          console.error("❌ API Error:", apiError);
+
+          // Show user-friendly error message
+          alert(
+            "Failed to save design. Please check your connection and try again."
+          );
+
+          // Optionally, still navigate with local data as fallback
+          const dataURL = canvas.toDataURL({
+            format: "png",
+            quality: 0.7,
+            multiplier: 1,
+          });
+
+          navigate("/order-form", {
+            state: {
+              designImage: dataURL,
+              sport,
+              fit,
+              style,
+              product_id,
+              saveError: true, // Flag to indicate API save failed
+            },
+          });
+        } finally {
+          setIsSaving(false); // Hide loading state
         }
-      }
+      };
 
-      //  Remove all invalid shapes
-      shapesToRemove.forEach((obj) => canvas.remove(obj));
-
-      canvas.discardActiveObject();
-      canvas.renderAll();
-
-      const dataURL = canvas.toDataURL({
-        format: "png",
-        quality: 1,
-        multiplier: 2,
-      });
-
-      //  Navigate after cleaning
-      navigate("/order-form", {
-        state: {
-          designImage: dataURL,
-          sport,
-          fit,
-          style,
-        },
-      });
-    };
+      maskImg.onerror = () => {
+        console.error("Failed to load mask image");
+        setIsSaving(false);
+        alert("Error processing design. Please try again.");
+      };
+    } catch (error) {
+      console.error("❌ Unexpected error:", error);
+      setIsSaving(false);
+      alert("An unexpected error occurred. Please try again.");
+    }
   };
 
   const [showElementsPanel, setShowElementsPanel] = useState(false);
@@ -610,6 +667,7 @@ export default function DesignEditor({ userImage, setSelectedDesignURL }) {
         >
           Redo
         </button>
+
         {isModified ? (
           <>
             <button
@@ -621,21 +679,31 @@ export default function DesignEditor({ userImage, setSelectedDesignURL }) {
 
             <button
               onClick={handleSaveDesign}
-              className="bg-green-600 text-white px-3 py-1 rounded"
-              disabled={!editorImage}
+              disabled={isSaving}
+              className={`px-3 py-1 rounded ${
+                isSaving
+                  ? "bg-gray-400 text-gray-600 cursor-not-allowed"
+                  : "bg-green-600 text-white hover:bg-green-700"
+              }`}
             >
-              Save Design
+              {isSaving ? "Saving..." : "Save Design"}
             </button>
           </>
         ) : (
           <button
             onClick={handleSaveDesign}
-            className="bg-green-600 text-white px-3 py-1 rounded"
+            disabled={isSaving}
+            className={`px-3 py-1 rounded ${
+              isSaving
+                ? "bg-gray-400 text-gray-600 cursor-not-allowed"
+                : "bg-green-600 text-white hover:bg-green-700"
+            }`}
           >
-            Save Design
+            {isSaving ? "Saving..." : "Save Design"}
           </button>
         )}
       </div>
+
       <div className="flex items-center gap-2 mt-4">
         <label htmlFor="opacitySlider">Opacity</label>
         <input
@@ -653,6 +721,16 @@ export default function DesignEditor({ userImage, setSelectedDesignURL }) {
           }}
         />
       </div>
+
+      {/* Loading overlay when saving */}
+      {isSaving && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white p-6 rounded-lg text-center">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
+            <p className="text-gray-700">Saving your design...</p>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
