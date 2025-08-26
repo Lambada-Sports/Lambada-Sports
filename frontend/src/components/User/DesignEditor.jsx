@@ -641,12 +641,13 @@ const handleSaveDesign = async () => {
               onClick={handleSaveDesign}
               className="bg-green-600 text-white px-3 py-1 rounded"
             >
-              Save Design
+              {isSaving ? "Saving..." : "Save Design"}
             </button>
           )
         }
 
       </div>
+
       <div className="flex items-center gap-2 mt-4">
       <label htmlFor="opacitySlider">Opacity</label>
       <input

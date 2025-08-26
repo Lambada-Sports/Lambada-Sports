@@ -1,20 +1,56 @@
-import { useState } from "react";
+/* eslint-disable no-unused-vars */
+import { useState, useEffect } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
+import { useAuth0 } from "@auth0/auth0-react";
 import Navbar from "./Navbar";
+//import axios from "axios";
 
 export default function OrderFormPage() {
   const { state } = useLocation();
   const navigate = useNavigate();
-  const { designImage, sport, fit, style } = state || {};
+  const { isAuthenticated, loginWithRedirect, isLoading } = useAuth0();
 
-  const [sportState, setSportState] = useState(sport || "");
-  const [fitState, setFitState] = useState(fit || "");
-  const [styleState, setStyleState] = useState(style || "");
+  const [sportState, setSportState] = useState(state?.sport || "");
+  const [fitState, setFitState] = useState(state?.fit || "");
+  const [styleState, setStyleState] = useState(state?.style || "");
   const [size, setSize] = useState("medium");
   const [quantity, setQuantity] = useState(1);
   const [address, setAddress] = useState("");
+  const [designImage, setDesignImage] = useState(state?.designImage || "");
 
-  const handleAddToCart = () => {
+  useEffect(() => {
+    const savedOrder = localStorage.getItem("pendingOrder");
+    if (savedOrder) {
+      const order = JSON.parse(savedOrder);
+      setSportState(order.sport || "");
+      setFitState(order.fit || "");
+      setStyleState(order.style || "");
+      setSize(order.size || "medium");
+      setQuantity(order.quantity || 1);
+      setAddress(order.address || "");
+      setDesignImage(order.designImage || "");
+      localStorage.removeItem("pendingOrder");
+    }
+  }, []);
+
+  const handleAddToCart = async () => {
+    if (!isAuthenticated && !isLoading) {
+      await loginWithRedirect({
+        appState: {
+          returnTo: "/order-form",
+          orderState: {
+            sport: sportState,
+            fit: fitState,
+            style: styleState,
+            size,
+            quantity,
+            address,
+            designImage,
+          },
+        },
+      });
+      return;
+    }
     const order = {
       sport: sportState,
       fit: fitState,
@@ -33,7 +69,6 @@ export default function OrderFormPage() {
     <>
       <Navbar />
       <div className="relative min-h-screen bg-gray-100 py-10 px-4 flex justify-center items-center overflow-hidden">
-        {/* 🔁 Rotating PNG background logo */}
         <img
           src="/assets/ogo.png"
           alt="Background Logo"
@@ -46,7 +81,6 @@ export default function OrderFormPage() {
           }}
         />
 
-        {/* 🔳 Form Content */}
         <div className="relative z-10 bg-white shadow-lg rounded-lg p-6 w-full max-w-xl">
           <h2 className="text-3xl font-bold mb-6 text-center text-gray-800 font-michroma">
             Customize Your Order

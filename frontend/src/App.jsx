@@ -21,6 +21,22 @@ export default function App() {
       clientId={clientId}
       authorizationParams={{
         redirect_uri: window.location.origin,
+        audience: "https://dev-e6qbovpsssxtr7qp.us.auth0.com/api/v2/",
+        scope: "openid profile email",
+      }}
+      onRedirectCallback={(appState) => {
+        if (appState?.orderState) {
+          localStorage.setItem(
+            "pendingOrder",
+            JSON.stringify(appState.orderState)
+          );
+        }
+
+        window.history.replaceState(
+          {},
+          document.title,
+          appState?.returnTo || window.location.pathname
+        );
       }}
       useRefreshTokens={true}
       cacheLocation="localstorage"
