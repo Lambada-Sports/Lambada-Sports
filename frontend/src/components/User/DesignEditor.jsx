@@ -1,736 +1,670 @@
-/* eslint-disable no-unused-vars */
-import { useEffect, useRef, useState } from "react";
-import ElementsPanel from "./ElementsPanel";
-import { useNavigate, useLocation } from "react-router-dom";
-import { useAuth0 } from "@auth0/auth0-react";
+import { useEffect, useRef, useState } from 'react'
+import ElementsPanel from './ElementsPanel' // correct path use pannunga
+import { useNavigate, useLocation } from 'react-router-dom'
 
 export default function DesignEditor({ userImage, setSelectedDesignURL }) {
-  const canvasRef = useRef(null);
-  const [canvas, setCanvas] = useState(null);
-  const [fabricInstance, setFabricInstance] = useState(null);
-  const [history, setHistory] = useState([]);
-  const [redoStack, setRedoStack] = useState([]);
-  const [cropRect, setCropRect] = useState(null);
-  const [isErasing, setIsErasing] = useState(false);
-  const [activeImage, setActiveImage] = useState(null);
-  const [isImageLoaded, setIsImageLoaded] = useState(false);
-  const [editorImage, setEditorImage] = useState(null);
-  const [isModified, setIsModified] = useState(false);
-  const [isSaving, setIsSaving] = useState(false);
-  const { getAccessTokenSilently, isAuthenticated, loginWithRedirect, user } =
-    useAuth0();
+  const canvasRef = useRef(null)
+  const [canvas, setCanvas] = useState(null)
+  const [fabricInstance, setFabricInstance] = useState(null)
+  const [history, setHistory] = useState([])
+  const [redoStack, setRedoStack] = useState([])
+  const [cropRect, setCropRect] = useState(null)
+  const [isErasing, setIsErasing] = useState(false)
+  const [activeImage, setActiveImage] = useState(null)
+  const [isImageLoaded, setIsImageLoaded] = useState(false)
+  const [editorImage, setEditorImage] = useState(null)
+  const [isModified, setIsModified] = useState(false)
+  
+  const navigate = useNavigate()
+  const location = useLocation()
 
-  const navigate = useNavigate();
-  const location = useLocation();
+  const { sport, fit, style } = location.state || {}
 
-  const { sport, fit, style, product_id } = location.state || {};
-
-  // API function to save design
-  const saveDesignToAPI = async (designData) => {
-    if (!isAuthenticated) {
-      await loginWithRedirect();
-      return;
-    }
-
-    try {
-      const token = await getAccessTokenSilently();
-
-      const response = await fetch(
-        "http://localhost:5000/api/customer/design",
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify({
-            customer_id: user && user.sub,
-            product_id: product_id || 1,
-            design_data: designData,
-          }),
-        }
-      );
-
-      if (!response.ok) {
-        const errorText = await response.text();
-
-        throw new Error(
-          `HTTP error! status: ${response.status}, body: ${errorText}`
-        );
-      }
-
-      const result = await response.json();
-      console.log(" Design saved successfully:", result);
-      return result;
-    } catch (error) {
-      console.error(" Failed to save design:", error);
-      throw error;
-    }
-  };
 
   // Save to history
   const saveToHistory = () => {
-    if (!canvas) return;
-    const current = canvas.toJSON();
-    setHistory((prev) => [...prev, current]);
-    setRedoStack([]);
-  };
+    if (!canvas) return
+    const current = canvas.toJSON()
+    setHistory(prev => [...prev, current])
+    setRedoStack([])
+  }
 
-  // Canvas init
-  useEffect(() => {
-    const init = async () => {
-      const fabricModule = await import("fabric");
-      const fabric =
-        fabricModule.fabric || fabricModule.default || fabricModule;
-      window.fabric = fabric;
+ 
+// Canvas init
+useEffect(() => {
+  const init = async () => {
+    const fabricModule = await import('fabric')
+    const fabric = fabricModule.fabric || fabricModule.default || fabricModule
+    window.fabric = fabric
 
-      setFabricInstance(fabric);
+    setFabricInstance(fabric)
 
-      if (canvasRef.current && canvasRef.current.__fabricCanvas) {
-        canvasRef.current.__fabricCanvas.dispose();
-      }
+    if (canvasRef.current && canvasRef.current.__fabricCanvas) {
+      canvasRef.current.__fabricCanvas.dispose()
+    }
 
-      const newCanvas = new fabric.Canvas(canvasRef.current, {
-        width: 750,
-        height: 700,
-        backgroundColor: "#fff",
-      });
+    const newCanvas = new fabric.Canvas(canvasRef.current, {
+      width: 750,
+      height: 700,
+      backgroundColor: '#fff',
+    })
 
-      canvasRef.current.__fabricCanvas = newCanvas;
-      setCanvas(newCanvas);
+    canvasRef.current.__fabricCanvas = newCanvas
+    setCanvas(newCanvas)
 
-      //  Mask image load
-      const bgImg = new Image();
-      bgImg.crossOrigin = "anonymous";
-      bgImg.src = "/textures/sample.png";
-      bgImg.onload = () => {
-        const fabricBg = new fabric.Image(bgImg, {
-          left: 0,
-          top: 0,
-          scaleX: newCanvas.width / bgImg.width,
-          scaleY: newCanvas.height / bgImg.height,
-          selectable: false,
-          evented: false,
-          absolutePositioned: true,
-        });
+    // 👉 Mask image load
+    const bgImg = new Image()
+    bgImg.crossOrigin = 'anonymous'
+    bgImg.src = '/textures/sample.png'
+    bgImg.onload = () => {
+      const fabricBg = new fabric.Image(bgImg, {
+        // left: 0,
+        // top: 0,
+        scaleX: newCanvas.width / bgImg.width,
+        scaleY: newCanvas.height / bgImg.height,
+        angle: 180,  // ✅ bg rotate
+        originX: 'center',
+        originY: 'center',
+        left: newCanvas.width / 2,  // center align
+        top: newCanvas.height / 2,   // center align
+        selectable: false,
+        evented: false,
+        absolutePositioned: true // ✅ clipping works properly
+      })
 
-        newCanvas.clipPath = fabricBg;
-        newCanvas.backgroundImage = fabricBg;
-        newCanvas.requestRenderAll();
-        newCanvas.renderAll();
-        saveToHistory();
-      };
-    };
+      // 👉 Apply as clipPath
+      newCanvas.clipPath = fabricBg
 
-    init();
-  }, []);
+      // 👉 Optional: Add as background image visually
+        newCanvas.backgroundImage = fabricBg
+        newCanvas.requestRenderAll()
 
-  const handleFileChange = (e) => {
-    const file = e.target.files[0];
+      newCanvas.renderAll()
+      saveToHistory()
+    }
+  }
+
+  init()
+}, [])
+const handleFileChange = (e) => {
+    const file = e.target.files[0]
     if (file) {
-      const reader = new FileReader();
+      const reader = new FileReader()
       reader.onload = () => {
-        const imgData = reader.result;
-        setEditorImage(imgData);
-      };
-      reader.readAsDataURL(file);
+        const imgData = reader.result // base64 format
+        setEditorImage(imgData)
+      }
+      reader.readAsDataURL(file)
     }
-  };
+  }
 
-  // Load User Image
-  useEffect(() => {
-    const imageToUse = editorImage || userImage;
 
-    if (fabricInstance && canvas && imageToUse) {
-      console.log("Step 1: fabricInstance, canvas, userImage available");
+  
+  // Load User Image jjk
+useEffect(() => {
+  const imageToUse = editorImage || userImage
 
-      const img = new Image();
-      img.crossOrigin = "anonymous";
-      img.src = imageToUse;
+  if (fabricInstance && canvas && imageToUse) {
+    console.log("🟡 Step 1: fabricInstance, canvas, userImage available")
+    console.log("🔹 userImage =", userImage)
+    
 
-      img.onload = () => {
-        const tempCanvas = document.createElement("canvas");
-        tempCanvas.width = img.width;
-        tempCanvas.height = img.height;
+    const img = new Image()
+    img.crossOrigin = 'anonymous'
+    img.src = imageToUse
 
-        const ctx = tempCanvas.getContext("2d");
-        ctx.drawImage(img, 0, 0);
+    img.onload = () => {
+      console.log("✅ Step 2: HTML <img> loaded")
+      console.log("📏 Image size =", img.width, img.height)
 
-        const scale = Math.min(
-          canvas.width / img.width,
-          canvas.height / img.height
-        );
-        const left = (canvas.width - img.width * scale) / 2;
-        const top = (canvas.height - img.height * scale) / 2;
 
-        const fabricImg = new window.fabric.Image(img, {
-          left,
-          top,
-          scaleX: scale,
-          scaleY: scale,
-          hasBorders: true,
-          hasControls: true,
-          selectable: true,
-          opacity: 0.7,
-        });
+      const tempCanvas = document.createElement('canvas')
+      tempCanvas.width = img.width
+      tempCanvas.height = img.height
 
-        fabricImg._tempCanvas = tempCanvas;
-        fabricImg._tempCtx = ctx;
+      const ctx = tempCanvas.getContext('2d')
+      ctx.drawImage(img, 0, 0)
 
-        canvas.add(fabricImg);
-        canvas.setActiveObject(fabricImg);
-        canvas.renderAll();
-        setIsImageLoaded(true);
-        setActiveImage(fabricImg);
-        saveToHistory();
-      };
+      const scale = Math.min(canvas.width / img.width, canvas.height / img.height)
+      const left = (canvas.width - img.width * scale) / 2
+      const top = (canvas.height - img.height * scale) / 2
 
-      img.onerror = () => {
-        console.error("Image load error! Check CORS or base64 issues.");
-      };
+      console.log("📐 Calculated position & scale:", { scale, left, top })
+
+      const fabricImg = new window.fabric.Image(img, {
+        left,
+        top,
+        scaleX: scale,
+        scaleY: scale,
+        hasBorders: true,
+        hasControls: true,
+        selectable: true,
+        opacity: 0.7 ,
+      })
+        console.log("🔍 testImg type =", fabricImg.type)
+        console.log("🔍 testImg instanceof fabric.Image =", fabricImg instanceof window.fabric.Image)
+
+      fabricImg._tempCanvas = tempCanvas
+      fabricImg._tempCtx = ctx
+      console.log("🧪 attaching tempCanvas:", !!tempCanvas)
+      console.log("🧪 attaching ctx:", !!ctx)
+      console.log("🧪 attached to fabricImg:", fabricImg._tempCanvas, fabricImg._tempCtx)
+
+      canvas.add(fabricImg)
+      canvas.setActiveObject(fabricImg)
+      // canvas.remove(fabricImg)
+      // canvas.add(fabricImg)   
+
+      canvas.renderAll()
+      setIsImageLoaded(true)
+
+      setActiveImage(fabricImg)
+      saveToHistory()
+
+      console.log("🎉 Step 3: Fabric image added to canvas and ready!")
+      console.log("🧪 fabricImg type =", fabricImg.type)
+      console.log("🧪 has moveTo =", typeof fabricImg.bringToFront)
+
     }
-  }, [userImage, canvas, fabricInstance, editorImage]);
 
-  const isShapeOverTransparentArea = async (shape, maskImage) => {
-    return new Promise((resolve) => {
-      const img = new Image();
-      img.crossOrigin = "anonymous";
-      img.src = maskImage.src;
+    img.onerror = () => {
+      console.error('❌ Image load error! Check CORS or base64 issues.')
+    }
+  }
+}, [userImage, canvas, fabricInstance,editorImage])
 
-      img.onload = () => {
-        const tempCanvas = document.createElement("canvas");
-        tempCanvas.width = img.width;
-        tempCanvas.height = img.height;
-        const ctx = tempCanvas.getContext("2d");
-        ctx.drawImage(img, 0, 0);
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-        const shapeLeft = shape.left;
-        const shapeTop = shape.top;
-        const shapeRight = shapeLeft + shape.width * shape.scaleX;
-        const shapeBottom = shapeTop + shape.height * shape.scaleY;
 
-        const scaleX = img.width / 750;
-        const scaleY = img.height / 700;
+const isShapeOverTransparentArea = async (shape, maskImage) => {
+  return new Promise((resolve) => {
+    const img = new Image()
+    img.crossOrigin = 'anonymous'
+    img.src = maskImage.src
 
-        let isOverTransparent = false;
+    img.onload = () => {
+      const tempCanvas = document.createElement('canvas')
+      tempCanvas.width = img.width
+      tempCanvas.height = img.height
+      const ctx = tempCanvas.getContext('2d')
+      ctx.drawImage(img, 0, 0)
 
-        for (let y = shapeTop; y < shapeBottom; y += 2) {
-          for (let x = shapeLeft; x < shapeRight; x += 2) {
-            const pixel = ctx.getImageData(x * scaleX, y * scaleY, 1, 1).data;
-            const alpha = pixel[3];
+      const shapeLeft = shape.left
+      const shapeTop = shape.top
+      const shapeRight = shapeLeft + shape.width * shape.scaleX
+      const shapeBottom = shapeTop + shape.height * shape.scaleY
 
-            if (alpha < 10) {
-              isOverTransparent = true;
-              resolve(true);
-              return;
-            }
+      // Scale factor: canvas size vs mask image size
+      const scaleX = img.width / 750 // your canvas width
+      const scaleY = img.height / 700 // your canvas height
+
+      let isOverTransparent = false
+
+      for (let y = shapeTop; y < shapeBottom; y += 2) {
+        for (let x = shapeLeft; x < shapeRight; x += 2) {
+          const pixel = ctx.getImageData(x * scaleX, y * scaleY, 1, 1).data
+          const alpha = pixel[3]
+
+          if (alpha < 10) {
+            isOverTransparent = true
+            resolve(true)
+            return
           }
         }
-
-        resolve(false);
-      };
-
-      img.onerror = () => {
-        console.error("Failed to load mask image");
-        resolve(false);
-      };
-    });
-  };
-
-  // Eraser functionality
-  const handleErase = () => {
-    if (!canvas || !fabricInstance || !activeImage || !isImageLoaded) {
-      console.warn("Cannot erase: Missing required setup");
-      return;
-    }
-
-    const active = activeImage;
-
-    if (!active._tempCanvas || !active._tempCtx) {
-      console.warn("Cannot erase: tempCanvas or ctx missing");
-      return;
-    }
-
-    setIsErasing(true);
-    canvas.selection = false;
-    canvas.discardActiveObject();
-    canvas.defaultCursor = "crosshair";
-    active.selectable = false;
-
-    let lastPoint = null;
-    const radius = 15;
-
-    const moveHandler = (opt) => {
-      if (!isErasing) return;
-
-      const pointer = canvas.getPointer(opt.e);
-      const ctx = active._tempCtx;
-
-      const x = (pointer.x - active.left) / active.scaleX;
-      const y = (pointer.y - active.top) / active.scaleY;
-
-      if (lastPoint) {
-        const dx = x - lastPoint.x;
-        const dy = y - lastPoint.y;
-        const dist = Math.sqrt(dx * dx + dy * dy);
-        const steps = Math.floor(dist / 2);
-
-        for (let i = 0; i < steps; i++) {
-          const px = lastPoint.x + (dx * i) / steps;
-          const py = lastPoint.y + (dy * i) / steps;
-
-          ctx.save();
-          ctx.beginPath();
-          ctx.arc(px, py, radius, 0, 2 * Math.PI);
-          ctx.clip();
-          ctx.clearRect(px - radius, py - radius, radius * 2, radius * 2);
-          ctx.restore();
-        }
-
-        const updatedURL = active._tempCanvas.toDataURL();
-
-        active.setSrc(updatedURL, () => {
-          canvas.renderAll();
-        });
       }
 
-      lastPoint = { x, y };
-    };
+      resolve(false)
+    }
 
-    const downHandler = () => {
-      lastPoint = null;
-      canvas.on("mouse:move", moveHandler);
-    };
+    img.onerror = () => {
+      console.error('❌ Failed to load mask image')
+      resolve(false)
+    }
+  })
+}
 
-    const upHandler = () => {
-      canvas.off("mouse:move", moveHandler);
-      active.selectable = true;
-      canvas.selection = true;
-      canvas.defaultCursor = "default";
-      setIsErasing(false);
-      saveToHistory();
-    };
 
-    canvas.on("mouse:down", downHandler);
-    canvas.on("mouse:up", upHandler);
-  };
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-  const handleStopErase = () => {
-    setIsErasing(false);
-    if (!canvas) return;
-    canvas.selection = true;
-    canvas.defaultCursor = "default";
-    canvas.off("mouse:move");
-    canvas.off("mouse:down");
-    canvas.off("mouse:up");
-    if (activeImage) activeImage.selectable = true;
-  };
 
-  // Crop functionality
+  // ✏️ Eraser
+const handleErase = () => {
+  if (!canvas || !fabricInstance || !activeImage || !isImageLoaded) {
+    console.warn("❌ Cannot erase: Missing required setup (canvas/fabricInstance/activeImage/imageLoaded).")
+    return
+  }
+
+  const active = activeImage
+  console.log("🧪 Erase triggered")
+  console.log("📌 Canvas exists?", !!canvas)
+  console.log("📌 Fabric instance exists?", !!fabricInstance)
+  console.log("📌 Active Image exists?", !!active)
+  console.log("📌 tempCanvas attached?", !!active._tempCanvas)
+  console.log("📌 tempCtx attached?", !!active._tempCtx)
+
+  if (!active._tempCanvas || !active._tempCtx) {
+    console.warn("⚠️ Cannot erase: tempCanvas or ctx missing")
+    return
+  }
+
+  setIsErasing(true)
+  canvas.selection = false
+  canvas.discardActiveObject()
+  canvas.defaultCursor = 'crosshair'
+  active.selectable = false
+
+  let lastPoint = null
+  const radius = 15
+
+  const moveHandler = (opt) => {
+    if (!isErasing) return
+
+    const pointer = canvas.getPointer(opt.e)
+    const ctx = active._tempCtx
+
+    const x = (pointer.x - active.left) / active.scaleX
+    const y = (pointer.y - active.top) / active.scaleY
+
+    console.log("🎯 Pointer on canvas:", pointer)
+    console.log("🎯 Image position and scale:", active.left, active.top, active.scaleX, active.scaleY)
+    console.log("🎯 Final calculated (x, y):", x, y)
+
+    if (lastPoint) {
+      const dx = x - lastPoint.x
+      const dy = y - lastPoint.y
+      const dist = Math.sqrt(dx * dx + dy * dy)
+      const steps = Math.floor(dist / 2)
+
+      for (let i = 0; i < steps; i++) {
+        const px = lastPoint.x + (dx * i) / steps
+        const py = lastPoint.y + (dy * i) / steps
+
+        ctx.save()
+        ctx.beginPath()
+        ctx.arc(px, py, radius, 0, 2 * Math.PI)
+        ctx.clip()
+        ctx.clearRect(px - radius, py - radius, radius * 2, radius * 2)
+        ctx.restore()
+
+
+      }
+
+      const updatedURL = active._tempCanvas.toDataURL()
+      console.log("🔄 Updated image base64 size:", updatedURL.length)
+
+      active.setSrc(updatedURL, () => {
+        console.log("✅ Image updated with erased data")
+        canvas.renderAll()
+      })
+    }
+
+    lastPoint = { x, y }
+  }
+
+  const downHandler = () => {
+    console.log("🖱️ Mouse Down - Start Drawing Erase")
+    lastPoint = null
+    canvas.on('mouse:move', moveHandler)
+  }
+
+  const upHandler = () => {
+    console.log("🖱️ Mouse Up - Stop Drawing Erase")
+    canvas.off('mouse:move', moveHandler)
+    active.selectable = true
+    canvas.selection = true
+    canvas.defaultCursor = 'default'
+    setIsErasing(false)
+    saveToHistory()
+    console.log("🛑 Erase mode stopped")
+  }
+
+  canvas.on('mouse:down', downHandler)
+  canvas.on('mouse:up', upHandler)
+
+  console.log("👆 moveHandler attached")
+}
+
+const handleStopErase = () => {
+  setIsErasing(false)
+  if (!canvas) return
+  canvas.selection = true
+  canvas.defaultCursor = 'default'
+  canvas.off('mouse:move')
+  canvas.off('mouse:down')
+  canvas.off('mouse:up')
+  if (activeImage) activeImage.selectable = true
+  console.log("🛑 Erase mode stopped")
+}
+  
+
+  // ✂️ Crop
   const handleStartCrop = () => {
-    const active = canvas.getActiveObject();
-    if (!active || active.type !== "image") return;
+    const active = canvas.getActiveObject()
+    if (!active || active.type !== 'image') return
 
     const rect = new fabricInstance.Rect({
       left: active.left + 30,
       top: active.top + 30,
       width: active.width * active.scaleX * 0.5,
       height: active.height * active.scaleY * 0.5,
-      fill: "rgba(0,0,0,0.2)",
-      stroke: "blue",
+      fill: 'rgba(0,0,0,0.2)',
+      stroke: 'blue',
       strokeWidth: 1,
       hasBorders: true,
       hasControls: true,
-    });
+    })
 
-    setCropRect(rect);
-    canvas.add(rect);
-    canvas.setActiveObject(rect);
-    canvas.renderAll();
-  };
+    setCropRect(rect)
+    canvas.add(rect)
+    canvas.setActiveObject(rect)
+    canvas.renderAll()
+  }
 
   const handleApplyCrop = () => {
-    if (!cropRect || !canvas) return;
-    const image = canvas.getObjects("image").find((obj) => obj !== cropRect);
-    if (!image) return;
+    if (!cropRect || !canvas) return
+    const image = canvas.getObjects('image').find(obj => obj !== cropRect)
+    if (!image) return
 
-    const cropX = cropRect.left - image.left;
-    const cropY = cropRect.top - image.top;
+    const cropX = cropRect.left - image.left
+    const cropY = cropRect.top - image.top
 
     image.set({
       cropX: cropX / image.scaleX,
       cropY: cropY / image.scaleY,
       width: cropRect.width / image.scaleX,
       height: cropRect.height / image.scaleY,
-    });
+    })
 
-    canvas.remove(cropRect);
-    setCropRect(null);
-    canvas.setActiveObject(image);
-    canvas.renderAll();
-    saveToHistory();
-  };
+    canvas.remove(cropRect)
+    setCropRect(null)
+    canvas.setActiveObject(image)
+    canvas.renderAll()
+    saveToHistory()
+  }
 
   const handleDelete = () => {
-    const active = canvas.getActiveObject();
+    const active = canvas.getActiveObject()
     if (active) {
-      canvas.remove(active);
-      canvas.renderAll();
-      saveToHistory();
+      canvas.remove(active)
+      canvas.renderAll()
+      saveToHistory()
     }
-  };
+  }
 
   const handleUndo = () => {
-    if (history.length < 2) return;
-    const prev = [...history];
-    prev.pop();
-    const last = prev[prev.length - 1];
-    setRedoStack((r) => [...r, canvas.toJSON()]);
-    setHistory(prev);
-    canvas.loadFromJSON(last, () => canvas.renderAll());
-  };
+    if (history.length < 2) return
+    const prev = [...history]
+    prev.pop()
+    const last = prev[prev.length - 1]
+    setRedoStack(r => [...r, canvas.toJSON()])
+    setHistory(prev)
+    canvas.loadFromJSON(last, () => canvas.renderAll())
+  }
 
   const handleRedo = () => {
-    if (redoStack.length === 0) return;
-    const last = redoStack.pop();
-    setRedoStack([...redoStack]);
-    setHistory((h) => [...h, last]);
-    canvas.loadFromJSON(last, () => canvas.renderAll());
+    if (redoStack.length === 0) return
+    const last = redoStack.pop()
+    setRedoStack([...redoStack])
+    setHistory(h => [...h, last])
+    canvas.loadFromJSON(last, () => canvas.renderAll())
+  }
+
+//Apply Design (just update the state and 3D model)
+const handleApplyDesign = () => {
+  if (canvas) {
+    canvas.discardActiveObject()
+    canvas.renderAll()
+
+    const dataURL = canvas.toDataURL({ format: 'png', quality: 1 })
+    setSelectedDesignURL(dataURL)
+    setIsModified(false)
+
+    console.log("🎨 Design applied to 3D view!")
+    console.log("🟢 Objects before save:", canvas.getObjects().map(o => ({type: o.type, fill: o.fill, layer: o.layerName})))
+
+    const jsonData = JSON.stringify(
+      canvas.toJSON(["layerName"]),
+      null,
+      2
+    )
+
+    console.log(jsonData)
+
+
+  }
+}
+
+// Save Design (and go to order-form)
+const handleSaveDesign = async () => {
+  if (!canvas) return;
+
+  const maskImg = new Image();
+  maskImg.crossOrigin = 'anonymous';
+  maskImg.src = '/textures/sample.png';
+
+  maskImg.onload = async () => {
+    const objects = canvas.getObjects();
+    const shapesToRemove = [];
+    console.log("🟢 Objects before save:", canvas.getObjects().map(o => ({type: o.type, fill: o.fill, layer: o.layerName})))
+
+    // for (let obj of objects) {
+    //   if (obj.type !== 'image') {
+    //     const isInvalid = await isShapeOverTransparentArea(obj, maskImg);
+    //     if (isInvalid) {
+    //       shapesToRemove.push(obj);
+    //     }
+    //   }
+    // }
+
+    // shapesToRemove.forEach(obj => canvas.remove(obj));
+    
+
+    canvas.discardActiveObject();
+    canvas.renderAll();
+
+    // PNG (for preview / 3D)
+    const pngData = canvas.toDataURL({
+      format: 'png',
+      quality: 1,
+      multiplier: 2
+    });
+    
+
+    // JSON (for editing later)
+    const jsonData = JSON.stringify(
+      canvas.toJSON(["layerName"]),
+      null,
+      2
+    )
+
+    console.log(jsonData)
+
+    // 🔹 Trigger JSON download
+    const blob = new Blob([jsonData], { type: 'application/json' });
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = 'design.json';
+    link.click();
+
+    // Navigate (still send PNG for preview)
+    navigate('/order-form', {
+      state: {
+        designImage: pngData,
+        sport,
+        fit,
+        style
+      }
+    });
   };
+};
 
-  // Apply Design (just update the state and 3D model)
-  const handleApplyDesign = () => {
-    if (canvas) {
-      canvas.discardActiveObject();
-      canvas.renderAll();
 
-      const dataURL = canvas.toDataURL({ format: "png", quality: 0.7 });
-      setSelectedDesignURL(dataURL);
-      setIsModified(false);
 
-      console.log("🎨 Design applied to 3D view!");
-    }
-  };
 
-  // Save Design (save to API and navigate to order-form)
-  const handleSaveDesign = async () => {
-    if (!canvas) return;
-
-    setIsSaving(true); // Show loading state
-
-    try {
-      // Load the same mask image used in clipPath
-      const maskImg = new Image();
-      maskImg.crossOrigin = "anonymous";
-      maskImg.src = "/textures/sample.png";
-
-      maskImg.onload = async () => {
-        try {
-          const objects = canvas.getObjects();
-          const shapesToRemove = [];
-
-          // Check for shapes over transparent areas
-          for (let obj of objects) {
-            if (obj.type !== "image") {
-              const isInvalid = await isShapeOverTransparentArea(obj, maskImg);
-              if (isInvalid) {
-                shapesToRemove.push(obj);
-              }
-            }
-          }
-
-          // Remove all invalid shapes
-          shapesToRemove.forEach((obj) => canvas.remove(obj));
-
-          canvas.discardActiveObject();
-          canvas.renderAll();
-
-          // Generate design data
-          const dataURL = canvas.toDataURL({
-            format: "png",
-            quality: 0.7,
-            multiplier: 1,
-          });
-
-          // Prepare design data for API
-          const designData = {
-            canvasData: canvas.toJSON(), // Complete canvas state
-            imageURL: dataURL, // Final rendered image
-            sport,
-            fit,
-            style,
-            timestamp: new Date().toISOString(),
-            metadata: {
-              canvasWidth: canvas.width,
-              canvasHeight: canvas.height,
-              objectCount: canvas.getObjects().length,
-            },
-          };
-
-          console.log("💾 Saving design data:", designData);
-
-          // Save to API
-          const savedDesign = await saveDesignToAPI(designData);
-
-          console.log("✅ Design saved successfully with ID:", savedDesign.id);
-
-          // Navigate to order form with saved design ID
-          navigate("/order-form", {
-            state: {
-              designImage: dataURL,
-              sport,
-              fit,
-              style,
-              designId: savedDesign.id, // Include design ID for reference
-              product_id,
-            },
-          });
-        } catch (apiError) {
-          console.error("❌ API Error:", apiError);
-
-          // Show user-friendly error message
-          alert(
-            "Failed to save design. Please check your connection and try again."
-          );
-
-          // Optionally, still navigate with local data as fallback
-          const dataURL = canvas.toDataURL({
-            format: "png",
-            quality: 0.7,
-            multiplier: 1,
-          });
-
-          navigate("/order-form", {
-            state: {
-              designImage: dataURL,
-              sport,
-              fit,
-              style,
-              product_id,
-              saveError: true, // Flag to indicate API save failed
-            },
-          });
-        } finally {
-          setIsSaving(false); // Hide loading state
-        }
-      };
-
-      maskImg.onerror = () => {
-        console.error("Failed to load mask image");
-        setIsSaving(false);
-        alert("Error processing design. Please try again.");
-      };
-    } catch (error) {
-      console.error("❌ Unexpected error:", error);
-      setIsSaving(false);
-      alert("An unexpected error occurred. Please try again.");
-    }
-  };
-
-  const [showElementsPanel, setShowElementsPanel] = useState(false);
+  const [showElementsPanel, setShowElementsPanel] = useState(false)
 
   const addShape = (type) => {
-    if (!canvas || !fabricInstance) return;
+    if (!canvas || !fabricInstance) return
 
-    let shape;
+    let shape
+    let uniqueId = Date.now() + "_" + type 
 
     switch (type) {
-      case "rect":
+      case 'rect':
         shape = new fabricInstance.Rect({
           left: 100,
           top: 100,
           width: 100,
           height: 60,
-          fill: "white",
-          stroke: "black",
+          fill: 'white',
+          stroke: 'black',
           strokeWidth: 0,
-        });
-        break;
-      case "circle":
+          layerName: uniqueId 
+        })
+        break
+      case 'circle':
         shape = new fabricInstance.Circle({
           left: 120,
           top: 120,
           radius: 40,
-          fill: "lightgreen",
-          stroke: "black",
+          fill: 'lightgreen',
+          stroke: 'black',
           strokeWidth: 0,
-        });
-        break;
-      case "triangle":
+          layerName: uniqueId 
+        })
+        break
+      case 'triangle':
         shape = new fabricInstance.Triangle({
           left: 140,
           top: 140,
           width: 80,
           height: 80,
-          fill: "orange",
-          stroke: "black",
+          fill: 'orange',
+          stroke: 'black',
           strokeWidth: 0,
-        });
-        break;
-      case "line":
+          layerName: uniqueId 
+        })
+        break
+      case 'line':
         shape = new fabricInstance.Line([50, 50, 150, 50], {
           left: 160,
           top: 160,
-          stroke: "black",
+          stroke: 'black',
           strokeWidth: 3,
-        });
-        break;
+          layerName: uniqueId 
+        })
+        break
       default:
-        return;
+        return
     }
 
-    canvas.add(shape);
-    canvas.setActiveObject(shape);
-    canvas.renderAll();
-    saveToHistory();
-    setIsModified(true);
-  };
+    canvas.add(shape)
+    canvas.setActiveObject(shape)
+    canvas.renderAll()
+    saveToHistory()
+    setIsModified(true)
+
+  }
+
+  
 
   return (
     <div>
       <canvas ref={canvasRef} width={750} height={700} />
       <div className="mt-4 flex flex-wrap gap-2">
-        <div className="mb-4">
-          <input
-            type="file"
-            accept="image/*"
-            onChange={handleFileChange}
-            className="mb-4"
-          />
-        </div>
+      <div className="mb-4">
+      <input
+        type="file"
+        accept="image/*"
+        onChange={handleFileChange}
+        className="mb-4" 
+      />
+    </div>
 
-        <button
-          onClick={() => setShowElementsPanel(!showElementsPanel)}
-          className="bg-purple-500 text-white px-3 py-1 rounded"
-        >
-          Elements
-        </button>
 
-        {showElementsPanel && <ElementsPanel onAddShape={addShape} />}
+      <button
+        onClick={() => setShowElementsPanel(!showElementsPanel)}
+        className="bg-purple-500 text-white px-3 py-1 rounded"
+      >
+        Elements
+      </button>
 
-        <input
-          type="color"
-          onChange={(e) => {
-            const activeObject = canvas.getActiveObject();
-            if (activeObject && activeObject.set) {
-              activeObject.set("fill", e.target.value);
-              canvas.renderAll();
-            }
-          }}
-        />
+      {showElementsPanel && (
+        <ElementsPanel onAddShape={addShape} />
+      )}
 
-        <button
-          onClick={handleErase}
-          disabled={!isImageLoaded}
-          className={`px-3 py-1 rounded ${
-            isImageLoaded
-              ? "bg-red-500 text-white"
-              : "bg-gray-300 text-gray-600 cursor-not-allowed"
-          }`}
-        >
-          Erase
-        </button>
+      <input
+        type="color"
+        onChange={(e) => {
+          const activeObject = canvas.getActiveObject()
+          if (activeObject && activeObject.set) {
+            activeObject.set('fill', e.target.value)
+            canvas.renderAll()
+          }
+        }}
+      />
 
-        <button
-          onClick={handleStopErase}
-          className="bg-blue-500 text-white px-3 py-1 rounded"
-        >
-          Stop Erase
-        </button>
-        <button
-          onClick={handleStartCrop}
-          className="bg-yellow-500 text-white px-3 py-1 rounded"
-        >
-          Start Crop
-        </button>
-        <button
-          onClick={handleApplyCrop}
-          className="bg-yellow-700 text-white px-3 py-1 rounded"
-        >
-          Apply Crop
-        </button>
-        <button
-          onClick={handleDelete}
-          className="bg-red-700 text-white px-3 py-1 rounded"
-        >
-          Delete Image
-        </button>
-        <button
-          onClick={handleUndo}
-          className="bg-gray-600 text-white px-3 py-1 rounded"
-        >
-          Undo
-        </button>
-        <button
-          onClick={handleRedo}
-          className="bg-gray-400 text-white px-3 py-1 rounded"
-        >
-          Redo
-        </button>
+      <button
+        onClick={handleErase}
+        disabled={!isImageLoaded}
+        className={`px-3 py-1 rounded ${
+          isImageLoaded ? 'bg-red-500 text-white' : 'bg-gray-300 text-gray-600 cursor-not-allowed'
+        }`}
+      >
+        Erase
+      </button>
 
-        {isModified ? (
-          <>
-            <button
-              onClick={handleApplyDesign}
-              className="bg-blue-600 text-white px-3 py-1 rounded"
-            >
-              Apply Design
-            </button>
 
+        <button onClick={handleDelete} className="bg-red-700 text-white px-3 py-1 rounded">Delete Image</button>
+        <button onClick={handleUndo} className="bg-gray-600 text-white px-3 py-1 rounded">Undo</button>
+        <button onClick={handleRedo} className="bg-gray-400 text-white px-3 py-1 rounded">Redo</button>
+        {
+          isModified ? (
+            <>
+              <button
+                onClick={handleApplyDesign}
+                className="bg-blue-600 text-white px-3 py-1 rounded"
+              >
+                Apply Design
+              </button>
+
+              <button
+                onClick={handleSaveDesign}
+                className="bg-green-600 text-white px-3 py-1 rounded"
+                disabled={!editorImage}
+              >
+                Save Design
+              </button>
+            </>
+          ) : (
             <button
               onClick={handleSaveDesign}
-              disabled={isSaving}
-              className={`px-3 py-1 rounded ${
-                isSaving
-                  ? "bg-gray-400 text-gray-600 cursor-not-allowed"
-                  : "bg-green-600 text-white hover:bg-green-700"
-              }`}
+              className="bg-green-600 text-white px-3 py-1 rounded"
             >
               {isSaving ? "Saving..." : "Save Design"}
             </button>
-          </>
-        ) : (
-          <button
-            onClick={handleSaveDesign}
-            disabled={isSaving}
-            className={`px-3 py-1 rounded ${
-              isSaving
-                ? "bg-gray-400 text-gray-600 cursor-not-allowed"
-                : "bg-green-600 text-white hover:bg-green-700"
-            }`}
-          >
-            {isSaving ? "Saving..." : "Save Design"}
-          </button>
-        )}
+          )
+        }
+
       </div>
 
       <div className="flex items-center gap-2 mt-4">
-        <label htmlFor="opacitySlider">Opacity</label>
-        <input
-          type="range"
-          min="0"
-          max="1"
-          step="0.01"
-          onChange={(e) => {
-            const opacity = parseFloat(e.target.value);
-            const activeObject = canvas.getActiveObject();
-            if (activeObject) {
-              activeObject.set("opacity", opacity);
-              canvas.renderAll();
-            }
-          }}
-        />
-      </div>
-
-      {/* Loading overlay when saving */}
-      {isSaving && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white p-6 rounded-lg text-center">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
-            <p className="text-gray-700">Saving your design...</p>
-          </div>
-        </div>
-      )}
+      <label htmlFor="opacitySlider">Opacity</label>
+      <input
+        type="range"
+        min="0"
+        max="1"
+        step="0.01"
+        onChange={(e) => {
+          const opacity = parseFloat(e.target.value)
+          const activeObject = canvas.getActiveObject()
+          if (activeObject) {
+            activeObject.set('opacity', opacity)
+            canvas.renderAll()
+          }
+        }}
+      />
     </div>
-  );
+    </div>
+  )
 }
