@@ -7,6 +7,5 @@ router.post("/design", customerController.addDesign);
 router.get("/design", customerController.getDesign);
 router.get("/cart", customerController.getCart);
 router.post("/cart", customerController.addToCart);
-router.post("/order", customerController.placeOrder);
 
 module.exports = router;

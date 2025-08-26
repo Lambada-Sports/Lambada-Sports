@@ -2,10 +2,10 @@ const express = require("express");
 const router = express.Router();
 const checkoutController = require("../controllers/checkoutController");
 
-router.post("/create-session", checkoutController.paymentSession);
-router.get(
-  "/payment-status/:session_id",
-  checkoutController.checkPaymentStatus
+router.post(
+  "/stripe",
+  express.raw({ type: "application/json" }),
+  checkoutController.handleWebhook
 );
 
 module.exports = router;

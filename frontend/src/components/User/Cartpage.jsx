@@ -1,48 +1,69 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
+import { useAuth0 } from "@auth0/auth0-react";
 import { Trash2, Plus, Minus, ShoppingBag, ArrowRight } from "lucide-react";
 import Navbar from "./Navbar";
 
 export default function CartPage() {
   const navigate = useNavigate();
+  const { getAccessTokenSilently, isAuthenticated, isLoading } = useAuth0();
   const [cartItems, setCartItems] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  // Load cart items from localStorage
-  useEffect(() => {
-    const savedCart = localStorage.getItem("lambada_cart");
-    if (savedCart) {
-      setCartItems(JSON.parse(savedCart));
+  // Fetch cart items from API
+  const fetchCartItems = useCallback(async () => {
+    if (!isAuthenticated) {
+      setLoading(false);
+      return;
     }
-    setLoading(false);
-  }, []);
 
-  // Save cart to localStorage whenever it changes
+    try {
+      const token = await getAccessTokenSilently();
+
+      const response = await fetch("http://localhost:5000/api/customer/cart", {
+        method: "GET",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        console.log(" Cart items fetched:", data);
+        setCartItems(data);
+      } else {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+    } catch (error) {
+      console.error(" Error fetching cart:", error);
+    } finally {
+      setLoading(false);
+    }
+  }, [isAuthenticated, getAccessTokenSilently]);
+
+  // Load cart items when component mounts or authentication state changes
   useEffect(() => {
-    localStorage.setItem("lambada_cart", JSON.stringify(cartItems));
-  }, [cartItems]);
+    if (!isLoading) {
+      fetchCartItems();
+    }
+  }, [isLoading, fetchCartItems]);
 
-  // Update item quantity
   const updateQuantity = (index, newQuantity) => {
     if (newQuantity <= 0) {
       removeItem(index);
       return;
     }
+
     const updatedItems = [...cartItems];
     updatedItems[index].quantity = newQuantity;
     setCartItems(updatedItems);
-
-    // Dispatch custom event to update navbar cart count
-    window.dispatchEvent(new Event("cartUpdated"));
   };
 
-  // Remove item from cart
   const removeItem = (index) => {
     const updatedItems = cartItems.filter((_, i) => i !== index);
     setCartItems(updatedItems);
-
-    // Dispatch custom event to update navbar cart count
-    window.dispatchEvent(new Event("cartUpdated"));
+    alert("Remove item - API integration pending");
   };
 
   // Calculate total
@@ -67,7 +88,7 @@ export default function CartPage() {
     });
   };
 
-  if (loading) {
+  if (loading || isLoading) {
     return (
       <>
         <Navbar />
@@ -75,6 +96,31 @@ export default function CartPage() {
           <div className="text-center">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
             <p className="text-gray-600">Loading your cart...</p>
+          </div>
+        </div>
+      </>
+    );
+  }
+
+  if (!isAuthenticated) {
+    return (
+      <>
+        <Navbar />
+        <div className="min-h-screen bg-gray-100 flex items-center justify-center">
+          <div className="bg-white shadow-lg rounded-lg p-12 text-center max-w-md">
+            <ShoppingBag className="h-16 w-16 text-gray-300 mx-auto mb-4" />
+            <h2 className="text-2xl font-semibold text-gray-600 mb-2">
+              Please Log In
+            </h2>
+            <p className="text-gray-500 mb-6">
+              You need to be logged in to view your cart.
+            </p>
+            <button
+              onClick={() => navigate("/login")}
+              className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-semibold transition-colors"
+            >
+              Log In
+            </button>
           </div>
         </div>
       </>
@@ -141,11 +187,11 @@ export default function CartPage() {
                   >
                     <div className="flex flex-col md:flex-row gap-6">
                       {/* Design Image */}
-                      {item.designImage && (
+                      {item.design_data && (
                         <div className="flex-shrink-0">
                           <div className="w-32 h-32 bg-gray-50 rounded-lg p-2 border">
                             <img
-                              src={item.designImage}
+                              src={item.design_data}
                               alt="Custom Design"
                               className="w-full h-full object-contain"
                             />
@@ -159,54 +205,27 @@ export default function CartPage() {
                       {/* Item Details */}
                       <div className="flex-1">
                         <h3 className="text-xl font-semibold text-gray-800 mb-2">
-                          Custom {item.sport} Jersey
+                          {item.name || "Custom Sports Jersey"}
                         </h3>
 
-                        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-sm mb-4">
-                          <div>
-                            <span className="font-medium text-gray-600">
-                              Sport:
-                            </span>
-                            <p className="text-blue-600 font-semibold">
-                              {item.sport}
-                            </p>
-                          </div>
-                          <div>
-                            <span className="font-medium text-gray-600">
-                              Fit:
-                            </span>
-                            <p className="text-blue-600 font-semibold">
-                              {item.fit}
-                            </p>
-                          </div>
-                          <div>
-                            <span className="font-medium text-gray-600">
-                              Style:
-                            </span>
-                            <p className="text-blue-600 font-semibold">
-                              {item.style}
-                            </p>
-                          </div>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm mb-4">
                           <div>
                             <span className="font-medium text-gray-600">
                               Size:
                             </span>
                             <p className="text-blue-600 font-semibold">
-                              {item.size}
+                              {item.sizes}
+                            </p>
+                          </div>
+                          <div>
+                            <span className="font-medium text-gray-600">
+                              Details:
+                            </span>
+                            <p className="text-gray-700 text-sm">
+                              {item.customer_note}
                             </p>
                           </div>
                         </div>
-
-                        {item.address && (
-                          <div className="mb-4">
-                            <span className="font-medium text-gray-600">
-                              Delivery Address:
-                            </span>
-                            <p className="text-gray-700 text-sm">
-                              {item.address}
-                            </p>
-                          </div>
-                        )}
 
                         <div className="flex items-center justify-between">
                           {/* Quantity Controls */}

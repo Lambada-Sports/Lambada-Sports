@@ -37,9 +37,7 @@ function attachCustomerId(req, res, next) {
     });
   }
 
-  if (req.user && req.user.sub) {
-    req.customerId = req.user.sub;
-  }
+  req.customerId = user.sub;
   next();
 }
 

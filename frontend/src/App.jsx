@@ -10,6 +10,7 @@ import CartPage from "./components/User/CartPage";
 import CheckoutPage from "./components/User/CheckoutPage";
 import ContactPage from "./components/User/ContactPage";
 import FAQ from "./components/User/FAQ";
+import OrderSuccessPage from "./components/User/OrderSuccessPage";
 
 const domain = "dev-e6qbovpsssxtr7qp.us.auth0.com";
 const clientId = "53cJFOqfJj4gFrcqgpoisKpugN3gKWNu";
@@ -50,6 +51,7 @@ export default function App() {
           <Route path="/order-form" element={<OrderFormPage />} />
           <Route path="/cart" element={<CartPage />} />
           <Route path="/checkout" element={<CheckoutPage />} />
+          <Route path="/order-success" element={<OrderSuccessPage />} />
           <Route path="/about" element={<AboutPage />} />
           <Route path="/contact" element={<ContactPage />} />
           <Route path="/faq" element={<FAQ />} />

@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/exhaustive-deps */
 /* eslint-disable no-unused-vars */
 import { useEffect, useRef, useState } from "react";
 import ElementsPanel from "./ElementsPanel";
@@ -23,7 +24,7 @@ export default function DesignEditor({ userImage, setSelectedDesignURL }) {
   const navigate = useNavigate();
   const location = useLocation();
 
-  const { sport, fit, style, product_id } = location.state || {};
+  const { sport, fit, style, product_id, product } = location.state || {};
 
   // API function to save design
   const saveDesignToAPI = async (designData) => {
@@ -408,18 +409,17 @@ export default function DesignEditor({ userImage, setSelectedDesignURL }) {
       setSelectedDesignURL(dataURL);
       setIsModified(false);
 
-      console.log("🎨 Design applied to 3D view!");
+      console.log(" Design applied to 3D view!");
     }
   };
 
-  // Save Design (save to API and navigate to order-form)
+  // Save Design
   const handleSaveDesign = async () => {
     if (!canvas) return;
 
-    setIsSaving(true); // Show loading state
+    setIsSaving(true);
 
     try {
-      // Load the same mask image used in clipPath
       const maskImg = new Image();
       maskImg.crossOrigin = "anonymous";
       maskImg.src = "/textures/sample.png";
@@ -429,7 +429,6 @@ export default function DesignEditor({ userImage, setSelectedDesignURL }) {
           const objects = canvas.getObjects();
           const shapesToRemove = [];
 
-          // Check for shapes over transparent areas
           for (let obj of objects) {
             if (obj.type !== "image") {
               const isInvalid = await isShapeOverTransparentArea(obj, maskImg);
@@ -439,23 +438,20 @@ export default function DesignEditor({ userImage, setSelectedDesignURL }) {
             }
           }
 
-          // Remove all invalid shapes
           shapesToRemove.forEach((obj) => canvas.remove(obj));
 
           canvas.discardActiveObject();
           canvas.renderAll();
 
-          // Generate design data
           const dataURL = canvas.toDataURL({
             format: "png",
             quality: 0.7,
             multiplier: 1,
           });
 
-          // Prepare design data for API
           const designData = {
-            canvasData: canvas.toJSON(), // Complete canvas state
-            imageURL: dataURL, // Final rendered image
+            canvasData: canvas.toJSON(),
+            imageURL: dataURL,
             sport,
             fit,
             style,
@@ -467,33 +463,28 @@ export default function DesignEditor({ userImage, setSelectedDesignURL }) {
             },
           };
 
-          console.log("💾 Saving design data:", designData);
+          console.log(" Saving design data:", designData);
 
-          // Save to API
           const savedDesign = await saveDesignToAPI(designData);
+          console.log(" Design saved successfully with ID:", savedDesign.id);
 
-          console.log("✅ Design saved successfully with ID:", savedDesign.id);
-
-          // Navigate to order form with saved design ID
           navigate("/order-form", {
             state: {
               designImage: dataURL,
               sport,
               fit,
               style,
-              designId: savedDesign.id, // Include design ID for reference
+              designId: savedDesign.id,
               product_id,
             },
           });
         } catch (apiError) {
-          console.error("❌ API Error:", apiError);
+          console.error(" API Error:", apiError);
 
-          // Show user-friendly error message
           alert(
             "Failed to save design. Please check your connection and try again."
           );
 
-          // Optionally, still navigate with local data as fallback
           const dataURL = canvas.toDataURL({
             format: "png",
             quality: 0.7,
@@ -507,11 +498,11 @@ export default function DesignEditor({ userImage, setSelectedDesignURL }) {
               fit,
               style,
               product_id,
-              saveError: true, // Flag to indicate API save failed
+              saveError: true,
             },
           });
         } finally {
-          setIsSaving(false); // Hide loading state
+          setIsSaving(false);
         }
       };
 
@@ -521,7 +512,7 @@ export default function DesignEditor({ userImage, setSelectedDesignURL }) {
         alert("Error processing design. Please try again.");
       };
     } catch (error) {
-      console.error("❌ Unexpected error:", error);
+      console.error(" Unexpected error:", error);
       setIsSaving(false);
       alert("An unexpected error occurred. Please try again.");
     }
