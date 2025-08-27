@@ -142,7 +142,7 @@
       "globalCompositeOperation": "source-over",
       "skewX": 0,
       "skewY": 0,
-      
+
       "crossOrigin": "anonymous",
       "filters": []
     }
@@ -224,4 +224,6 @@
     "crossOrigin": "anonymous",
     "filters": []
   }
+
 }
+

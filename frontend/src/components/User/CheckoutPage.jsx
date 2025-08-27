@@ -1,12 +1,13 @@
-/* eslint-disable no-unused-vars */
 import { useState, useEffect } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
+import { useAuth0 } from "@auth0/auth0-react";
 import { CreditCard, MapPin, User, Phone, Mail, ArrowLeft } from "lucide-react";
 import Navbar from "./Navbar";
 
 export default function CheckoutPage() {
   const { state } = useLocation();
   const navigate = useNavigate();
+  const { getAccessTokenSilently, isAuthenticated } = useAuth0();
   const { cartItems = [], total = 0 } = state || {};
 
   const [formData, setFormData] = useState({
@@ -17,14 +18,16 @@ export default function CheckoutPage() {
     address: "",
     city: "",
     zipCode: "",
-    cardNumber: "",
-    expiryDate: "",
-    cvv: "",
-    cardName: "",
   });
 
   const [isProcessing, setIsProcessing] = useState(false);
-  const [orderPlaced, setOrderPlaced] = useState(false);
+
+  // Redirect if not authenticated
+  useEffect(() => {
+    if (!isAuthenticated) {
+      navigate("/login");
+    }
+  }, [isAuthenticated, navigate]);
 
   // Redirect if no cart items
   {
@@ -54,11 +57,7 @@ export default function CheckoutPage() {
       !formData.phone ||
       !formData.address ||
       !formData.city ||
-      !formData.zipCode ||
-      !formData.cardNumber ||
-      !formData.expiryDate ||
-      !formData.cvv ||
-      !formData.cardName
+      !formData.zipCode
     ) {
       alert("Please fill in all required fields");
       return;
@@ -66,41 +65,43 @@ export default function CheckoutPage() {
 
     setIsProcessing(true);
 
-    // Simulate order processing
-    setTimeout(() => {
+    try {
+      const token = await getAccessTokenSilently();
+
+      console.log(" Creating Stripe checkout session...");
+
+      // Calling API to create Stripe checkout session
+      const response = await fetch(
+        "http://localhost:5000/api/checkout/create-session",
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            customer_info: formData,
+          }),
+        }
+      );
+
+      if (response.ok) {
+        const data = await response.json();
+        console.log(" Stripe session created:", data);
+
+        // Redirect to Stripe Checkout
+        window.location.href = data.sessionUrl;
+      } else {
+        const errorData = await response.json();
+        console.error(" Error creating checkout session:", errorData);
+        throw new Error(errorData.error || "Failed to create checkout session");
+      }
+    } catch (error) {
+      console.error(" Error during checkout:", error);
+      alert(`Checkout failed: ${error.message}. Please try again.`);
       setIsProcessing(false);
-      setOrderPlaced(true);
-
-      // Clear cart after successful order
-      localStorage.removeItem("lambada_cart");
-
-      // Redirect to success page after 3 seconds
-      setTimeout(() => {
-        navigate("/");
-      }, 3000);
-    }, 2000);
+    }
   };
-
-  if (orderPlaced) {
-    return (
-      <>
-        <Navbar />
-        <div className="min-h-screen bg-gray-100 flex items-center justify-center">
-          <div className="bg-white p-8 rounded-lg shadow-lg text-center max-w-md">
-            <div className="text-green-500 text-6xl mb-4">✓</div>
-            <h2 className="text-2xl font-bold text-gray-800 mb-2">
-              Order Placed Successfully!
-            </h2>
-            <p className="text-gray-600 mb-4">
-              Thank you for your order. You will receive a confirmation email
-              shortly.
-            </p>
-            <p className="text-sm text-gray-500">Redirecting to home page...</p>
-          </div>
-        </div>
-      </>
-    );
-  }
 
   return (
     <>
@@ -256,71 +257,6 @@ export default function CheckoutPage() {
                   </div>
                 </div>
 
-                {/* Payment Information */}
-                <hr className="my-6" />
-                <h3 className="text-lg font-semibold text-gray-800 mb-4">
-                  Payment Information
-                </h3>
-
-                <div>
-                  <label className="block text-gray-700 mb-1">
-                    <CreditCard className="inline h-4 w-4 mr-1" />
-                    Card Number *
-                  </label>
-                  <input
-                    type="text"
-                    name="cardNumber"
-                    value={formData.cardNumber}
-                    onChange={handleInputChange}
-                    placeholder="1234 5678 9012 3456"
-                    className="w-full border px-3 py-2 rounded shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    required
-                  />
-                </div>
-
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-gray-700 mb-1">
-                      Expiry Date *
-                    </label>
-                    <input
-                      type="text"
-                      name="expiryDate"
-                      value={formData.expiryDate}
-                      onChange={handleInputChange}
-                      placeholder="MM/YY"
-                      className="w-full border px-3 py-2 rounded shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      required
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-gray-700 mb-1">CVV *</label>
-                    <input
-                      type="text"
-                      name="cvv"
-                      value={formData.cvv}
-                      onChange={handleInputChange}
-                      placeholder="123"
-                      className="w-full border px-3 py-2 rounded shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      required
-                    />
-                  </div>
-                </div>
-
-                <div>
-                  <label className="block text-gray-700 mb-1">
-                    Name on Card *
-                  </label>
-                  <input
-                    type="text"
-                    name="cardName"
-                    value={formData.cardName}
-                    onChange={handleInputChange}
-                    className="w-full border px-3 py-2 rounded shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    required
-                  />
-                </div>
-
                 {/* Place Order Button */}
                 <button
                   type="submit"
@@ -334,10 +270,10 @@ export default function CheckoutPage() {
                   {isProcessing ? (
                     <div className="flex items-center justify-center">
                       <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>
-                      Processing Order...
+                      Processing...
                     </div>
                   ) : (
-                    `Place Order - Rs. ${total.toLocaleString()}`
+                    "Proceed to Payment"
                   )}
                 </button>
               </form>

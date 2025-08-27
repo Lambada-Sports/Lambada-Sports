@@ -37,7 +37,7 @@ exports.paymentSession = async (req, res) => {
       payment_method_types: ["card"],
       line_items: lineItems,
       mode: "payment",
-      success_url: `${process.env.FRONTEND_URL}/order-success`,
+      success_url: `${process.env.FRONTEND_URL}/order-success?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${process.env.FRONTEND_URL}/cart`,
       metadata: {
         customer_id,
@@ -51,10 +51,12 @@ exports.paymentSession = async (req, res) => {
   }
 };
 
-// creating webhook
-exports.createWebhook = async (req, res) => {
+// Webhook to handle payment confirmation
+exports.handleWebhook = async (req, res) => {
   const signature = req.headers["stripe-signature"];
   let event;
+
+  console.log("Webhook received - processing...");
 
   try {
     event = stripe.webhooks.constructEvent(
@@ -62,48 +64,120 @@ exports.createWebhook = async (req, res) => {
       signature,
       process.env.STRIPE_WEBHOOK_SECRET
     );
+
+    console.log(`Webhook event type: ${event.type}`);
   } catch (err) {
+    console.error("Webhook signature verification failed:", err.message);
     return res.status(400).send(`Webhook error: ${err.message}`);
   }
 
   if (event.type === "checkout.session.completed") {
     const session = event.data.object;
-    const customer_id = parseInt(session.metadata.customer_id);
-    const cart_id = parseInt(session.metadata.cart_id);
+    const customer_id = session.metadata.customer_id;
+    const payment_intent_id = session.payment_intent;
 
-    const items = await pool.query(
-      "SELECT * FROM cartitem WHERE cart_id = $1",
-      [cart_id]
+    console.log(
+      `Processing checkout.session.completed for customer: ${customer_id}, payment_intent: ${payment_intent_id}`
     );
-    let total = 0;
 
-    for (let item of items.rows) {
-      const price = await pool.query(
-        "SELECT price FROM product WHERE id = $1",
-        [item.product_id]
-      );
-      total += item.quantity * price.rows[0].price;
-    }
-
-    const order = await pool.query(
-      "INSERT INTO orders (customer_id, total_amount) VALUES ($1, $2) RETURNING id",
-      [customer_id, total]
-    );
-    const order_id = order.rows[0].id;
-
-    for (let item of items.rows) {
-      const price = await pool.query(
-        "SELECT price FROM product WHERE id = $1",
-        [item.product_id]
-      );
+    try {
+      // Store payment confirmation in database for order creation
       await pool.query(
-        "INSERT INTO order_items (order_id, product_id, quantity, price) VALUES ($1, $2, $3, $4)",
-        [order_id, item.product_id, item.quantity, price.rows[0].price]
+        `INSERT INTO payments (customer_id, payment_intent_id, session_id, status, created_at) 
+         VALUES ($1, $2, $3, $4, CURRENT_TIMESTAMP)
+         ON CONFLICT (payment_intent_id) DO UPDATE SET status = $4`,
+        [customer_id, payment_intent_id, session.id, "completed"]
       );
-    }
 
-    await pool.query("DELETE FROM cartitem WHERE cart_id = $1", [cart_id]);
+      console.log(
+        `Payment confirmed for customer: ${customer_id}, payment_intent: ${payment_intent_id}`
+      );
+    } catch (error) {
+      console.error("Error storing payment confirmation:", error);
+      return res.status(500).send("Error processing payment confirmation");
+    }
+  } else {
+    console.log(`Ignoring webhook event type: ${event.type}`);
   }
 
   res.sendStatus(200);
+};
+
+// Check payment status
+exports.checkPaymentStatus = async (req, res) => {
+  try {
+    const { session_id } = req.params;
+    const customer_id = req.customerId;
+
+    console.log(
+      `Checking payment status for session: ${session_id}, customer: ${customer_id}`
+    );
+
+    const session = await stripe.checkout.sessions.retrieve(session_id);
+
+    console.log(`Stripe session details:`, {
+      payment_status: session.payment_status,
+      payment_intent: session.payment_intent,
+      customer: session.customer,
+      metadata: session.metadata,
+    });
+
+    if (session.payment_status === "paid") {
+      // Check if payment confirmation exists
+      const confirmation = await pool.query(
+        "SELECT * FROM payments WHERE customer_id = $1 AND session_id = $2 AND status = 'completed'",
+        [customer_id, session_id]
+      );
+
+      console.log(
+        `Payment confirmation check: ${confirmation.rows.length} records found`
+      );
+
+      if (confirmation.rows.length > 0) {
+        console.log(`Payment confirmed - ready for order creation`);
+        res.json({
+          payment_status: "completed",
+          payment_intent_id: session.payment_intent,
+          ready_for_order: true,
+        });
+      } else {
+        console.log(
+          `Payment paid but no confirmation record found - creating one now`
+        );
+
+        // If payment is paid but no confirmation record exists, create it
+        try {
+          await pool.query(
+            `INSERT INTO payments (customer_id, payment_intent_id, session_id, status, created_at) 
+             VALUES ($1, $2, $3, $4, CURRENT_TIMESTAMP)
+             ON CONFLICT (payment_intent_id) DO UPDATE SET status = $4`,
+            [customer_id, session.payment_intent, session_id, "completed"]
+          );
+
+          console.log(`Payment confirmation record created`);
+
+          res.json({
+            payment_status: "completed",
+            payment_intent_id: session.payment_intent,
+            ready_for_order: true,
+          });
+        } catch (dbError) {
+          console.error("Error creating payment confirmation:", dbError);
+          res.json({
+            payment_status: "processing",
+            ready_for_order: false,
+          });
+        }
+      }
+    } else {
+      console.log(`Payment not yet paid - status: ${session.payment_status}`);
+      res.json({
+        payment_status: session.payment_status,
+        ready_for_order: false,
+      });
+    }
+  } catch (error) {
+    console.error("Error checking payment status:", error);
+    res.status(500).json({ error: "Failed to check payment status" });
+  }
 };

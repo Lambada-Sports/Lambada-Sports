@@ -1,69 +1,74 @@
-import React, { useEffect, useState, useRef } from 'react';
-import { useParams } from 'react-router-dom';
-import Navbar from './Navbar';
-import { useNavigate } from 'react-router-dom';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
-import './carousel.css';
+/* eslint-disable no-unused-vars */
+import { useEffect, useState, useRef } from "react";
+import { useParams, useLocation } from "react-router-dom";
+import Navbar from "./Navbar";
+import { useNavigate } from "react-router-dom";
+import { ChevronLeft, ChevronRight } from "lucide-react";
+import "./carousel.css";
 
 const jerseyModels = {
   cricket: {
     mens: [
-      { name: 'Half Sleeve', image: '/assets/cricket/half.png' },
-      { name: 'Full Sleeve', image: '/assets/cricket/full.png' },
-      { name: 'Arm Cut', image: '/assets/cricket/arm.png' },
-      { name: 'Bottom', image: '/assets/cricket/bottom.png' },
-      { name: 'Shorts', image: '/assets/cricket/shorts.png' },
+      { name: "Half Sleeve", image: "/assets/cricket/half.png" },
+      { name: "Full Sleeve", image: "/assets/cricket/full.png" },
+      { name: "Arm Cut", image: "/assets/cricket/arm.png" },
+      { name: "Bottom", image: "/assets/cricket/bottom.jpg" },
+      { name: "Shorts", image: "/assets/cricket/shorts.jpg" },
     ],
     womens: [
-      { name: 'Half Sleeve', image: '/assets/cricket/half.png' },
-      { name: 'Full Sleeve', image: '/assets/cricket/full.png' },
-      { name: 'Arm Cut', image: '/assets/cricket/arm.png' },
-      { name: 'Bottom', image: '/assets/cricket/bottom.png' },
-      { name: 'Shorts', image: '/assets/cricket/shorts.png' },
+      { name: "Half Sleeve", image: "/assets/cricket/half.png" },
+      { name: "Full Sleeve", image: "/assets/cricket/full.png" },
+      { name: "Arm Cut", image: "/assets/cricket/arm.png" },
+      { name: "Bottom", image: "/assets/cricket/bottom.png" },
+      { name: "Shorts", image: "/assets/cricket/shorts.png" },
     ],
     kids: [
-      { name: 'Half Sleeve', image: '/assets/cricket/half.png' },
-      { name: 'Full Sleeve', image: '/assets/cricket/full.png' },
-      { name: 'Shorts', image: '/assets/cricket/shorts.png' },
+      { name: "Half Sleeve", image: "/assets/cricket/half.png" },
+      { name: "Full Sleeve", image: "/assets/cricket/full.png" },
+      { name: "Shorts", image: "/assets/cricket/shorts.png" },
     ],
     unisex: [
-      { name: 'Half Sleeve', image: '/assets/cricket/half.png' },
-      { name: 'Full Sleeve', image: '/assets/cricket/full.png' },
-      { name: 'Arm Cut', image: '/assets/cricket/arm.png' },
+      { name: "Half Sleeve", image: "/assets/cricket/half.png" },
+      { name: "Full Sleeve", image: "/assets/cricket/full.png" },
+      { name: "Arm Cut", image: "/assets/cricket/arm.png" },
     ],
   },
   basketball: {
     mens: [
-      { name: 'Sleeveless', image: '/assets/basketball/sleeveless.png' },
-      { name: 'Shorts', image: '/assets/basketball/shorts.png' },
+      { name: "Sleeveless", image: "/assets/basketball/sleeveless.png" },
+      { name: "Shorts", image: "/assets/basketball/shorts.png" },
     ],
     womens: [
-      { name: 'Sleeveless', image: '/assets/basketball/sleeveless.png' },
-      { name: 'Shorts', image: '/assets/basketball/shorts.png' },
+      { name: "Sleeveless", image: "/assets/basketball/sleeveless.png" },
+      { name: "Shorts", image: "/assets/basketball/shorts.png" },
     ],
     kids: [
-      { name: 'Sleeveless', image: '/assets/basketball/sleeveless.png' },
-      { name: 'Shorts', image: '/assets/basketball/shorts.png' },
+      { name: "Sleeveless", image: "/assets/basketball/sleeveless.png" },
+      { name: "Shorts", image: "/assets/basketball/shorts.png" },
     ],
   },
   football: {
     mens: [
-      { name: 'Home Jersey', image: '/assets/football/home.png' },
-      { name: 'Away Jersey', image: '/assets/football/away.png' },
-      { name: 'Shorts', image: '/assets/football/shorts.png' },
+      { name: "Home Jersey", image: "/assets/football/home.png" },
+      { name: "Away Jersey", image: "/assets/football/away.png" },
+      { name: "Shorts", image: "/assets/football/shorts.png" },
     ],
   },
 };
 
 export default function CustomizePage() {
   const { sport, fit } = useParams();
+  const location = useLocation();
+  const { product_id, product } = location.state || {};
+
   const styles = jerseyModels[sport]?.[fit] || [];
-  const navigate = useNavigate();
-  
+  const [animate, setAnimate] = useState(true);
   const [currentIndex, setCurrentIndex] = useState(0);
+  const containerRef = useRef(null);
   const [rotationAngle, setRotationAngle] = useState(0);
   const [initialAnimationDone, setInitialAnimationDone] = useState(false);
-  
+  const navigate = useNavigate();
+
   // Calculate angle per item based on number of styles
   const anglePerItem = styles.length > 0 ? 360 / styles.length : 72;
   const baseRotation = currentIndex * -anglePerItem;
@@ -90,7 +95,7 @@ export default function CustomizePage() {
       clearInterval(spinInterval);
       clearTimeout(stopSpinTimeout);
     };
-  }, [styles.length]);
+  }, [styles.length, baseRotation]);
 
   const handleLeft = () => {
     if (initialAnimationDone && styles.length > 0) {
@@ -107,16 +112,17 @@ export default function CustomizePage() {
   };
 
   const handleCustomize = (style) => {
-    navigate('/design-editor', {
+    navigate("/design-editor", {
       state: {
         sport,
         fit,
         style: style.name,
-        image: style.image
-      }
+        image: style.image,
+        product_id,
+        product,
+      },
     });
   };
-
 
   return (
     <>
@@ -128,15 +134,15 @@ export default function CustomizePage() {
         </h1>
 
         {/* Navigation buttons */}
-        <button 
-          onClick={handleLeft} 
+        <button
+          onClick={handleLeft}
           className="absolute left-2 sm:left-4 top-1/2 z-20 text-2xl sm:text-3xl hover:scale-110 transition-transform disabled:opacity-50"
           disabled={!initialAnimationDone}
         >
           <ChevronLeft size={28} className="sm:w-8 sm:h-8" />
         </button>
-        <button 
-          onClick={handleRight} 
+        <button
+          onClick={handleRight}
           className="absolute right-2 sm:right-4 top-1/2 z-20 text-2xl sm:text-3xl hover:scale-110 transition-transform disabled:opacity-50"
           disabled={!initialAnimationDone}
         >
@@ -149,7 +155,9 @@ export default function CustomizePage() {
             className="jersey-carousel"
             style={{
               transform: `rotateY(${rotationAngle}deg)`,
-              transition: initialAnimationDone ? 'transform 0.8s cubic-bezier(0.4, 0, 0.2, 1)' : 'none',
+              transition: initialAnimationDone
+                ? "transform 0.8s cubic-bezier(0.4, 0, 0.2, 1)"
+                : "none",
             }}
           >
             {styles.map((style, idx) => {
@@ -194,7 +202,7 @@ export default function CustomizePage() {
                   setRotationAngle(idx * -anglePerItem);
                 }
               }}
-              className={`jersey-dot ${idx === currentIndex ? 'active' : ''}`}
+              className={`jersey-dot ${idx === currentIndex ? "active" : ""}`}
               disabled={!initialAnimationDone}
             />
           ))}

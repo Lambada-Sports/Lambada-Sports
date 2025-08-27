@@ -1,8 +1,8 @@
 /* eslint-disable no-unused-vars */
-import React, { useState } from "react";
+
+import { useState, useEffect } from "react";
 import {
   Search,
-  Download,
   Edit,
   Trash2,
   Package,
@@ -11,6 +11,7 @@ import {
   XCircle,
   Clock,
   Phone,
+  UserCheck,
 } from "lucide-react";
 
 const Orders = () => {
@@ -23,69 +24,107 @@ const Orders = () => {
   });
   const [sortBy, setSortBy] = useState("orderDate");
   const [sortOrder, setSortOrder] = useState("desc");
+  const [orders, setOrders] = useState([]);
+  const [manufacturers, setManufacturers] = useState([]);
+  const [loading, setLoading] = useState(true);
 
-  const orderData = [
-    {
-      id: "ORD-001",
-      customer: {
-        name: "John Smith",
-        email: "john.smith@email.com",
-        phone: "+1 234 567 8900",
-      },
-      orderDate: "2024-07-19",
-      products: [
-        { name: "Cricket Jersey", quantity: 2, price: 500 },
-        { name: "Football Jersey", quantity: 1, price: 600 },
-      ],
-      totalAmount: 1600,
-      assignedManufacturer: "Elite Sports",
-      status: "Processing",
-      paymentStatus: "Paid",
-      deliveryDate: "2024-07-25",
-    },
-    {
-      id: "ORD-002",
-      customer: {
-        name: "Sarah Johnson",
-        email: "sarah.j@email.com",
-        phone: "+1 234 567 8901",
-      },
-      orderDate: "2024-07-18",
-      products: [{ name: "Basketball Jersey", quantity: 3, price: 550 }],
-      totalAmount: 1650,
-      assignedManufacturer: "SportsTech Ltd",
-      status: "Shipped",
-      paymentStatus: "Paid",
-      deliveryDate: "2024-07-24",
-    },
-    {
-      id: "ORD-003",
-      customer: {
-        name: "Michael Brown",
-        email: "michael.brown@email.com",
-        phone: "+1 234 567 8902",
-      },
-      orderDate: "2024-07-17",
-      products: [{ name: "Cricket Jersey", quantity: 1, price: 500 }],
-      totalAmount: 500,
-      assignedManufacturer: "Pro Athletic",
-      status: "Pending",
-      paymentStatus: "Pending",
-      deliveryDate: "2024-07-26",
-    },
-  ];
+  const [showAssignModal, setShowAssignModal] = useState(false);
+  const [selectedOrderForAssignment, setSelectedOrderForAssignment] =
+    useState(null);
+
+  useEffect(() => {
+    fetchOrders();
+    fetchManufacturers();
+  }, []);
+
+  // get all orders
+  const fetchOrders = async () => {
+    try {
+      setLoading(true);
+      const response = await fetch("http://localhost:5000/api/admin/orders");
+      const data = await response.json();
+
+      if (data.success) {
+        setOrders(data.orders);
+      }
+    } catch (err) {
+      console.error("Error fetching orders:", err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  //get all manufacturers
+  const fetchManufacturers = async () => {
+    try {
+      const response = await fetch(
+        "http://localhost:5000/api/admin/get-manufacturers"
+      );
+      const data = await response.json();
+
+      if (data.success) {
+        setManufacturers(data.manufacturers);
+      }
+    } catch (err) {
+      console.error("Error fetching manufacturers:", err);
+    }
+  };
+
+  // assign manufacturer to order
+  const assignManufacturer = async (orderId, manufacturerId) => {
+    try {
+      const response = await fetch(
+        `http://localhost:5000/api/admin/orders/${orderId}/assign-manufacturer`,
+        {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ manufacturer_id: manufacturerId }),
+        }
+      );
+
+      const data = await response.json();
+
+      if (data.success) {
+        fetchOrders();
+        setShowAssignModal(false);
+        alert(data.message);
+      } else {
+        alert(data.error || "Failed to assign manufacturer");
+      }
+    } catch (err) {
+      console.error("Error assigning manufacturer:", err);
+      alert("Failed to assign manufacturer");
+    }
+  };
+
+  // Filter orders based on current filters
+  const filteredOrders = orders.filter((order) => {
+    const matchesStatus = !filters.status || order.status === filters.status;
+    const matchesPayment =
+      !filters.paymentStatus || order.payment_status === filters.paymentStatus;
+    const matchesDate =
+      !filters.dateRange || order.order_date.includes(filters.dateRange);
+
+    return matchesStatus && matchesPayment && matchesDate;
+  });
+
+  // Use filtered orders for display
+  const orderData = filteredOrders;
 
   const getStatusColor = (status) => {
-    switch (status) {
-      case "Delivered":
+    switch (status.toLowerCase()) {
+      case "delivered":
         return "bg-green-100 text-green-800";
-      case "Shipped":
+      case "shipped":
         return "bg-blue-100 text-blue-800";
-      case "Processing":
+      case "processing":
         return "bg-yellow-100 text-yellow-800";
-      case "Pending":
+      case "confirmed":
+      case "pending":
         return "bg-orange-100 text-orange-800";
-      case "Cancelled":
+      case "cancelled":
         return "bg-red-100 text-red-800";
       default:
         return "bg-gray-100 text-gray-800";
@@ -93,14 +132,14 @@ const Orders = () => {
   };
 
   const getPaymentStatusColor = (status) => {
-    switch (status) {
-      case "Paid":
+    switch (status?.toLowerCase()) {
+      case "paid":
         return "bg-green-100 text-green-800";
-      case "Pending":
+      case "pending":
         return "bg-yellow-100 text-yellow-800";
-      case "Failed":
+      case "failed":
         return "bg-red-100 text-red-800";
-      case "Refunded":
+      case "refunded":
         return "bg-purple-100 text-purple-800";
       default:
         return "bg-gray-100 text-gray-800";
@@ -135,27 +174,39 @@ const Orders = () => {
     setShowBulkActions(false);
   };
 
-  const handleStatusChange = (orderId, newStatus) => {
-    console.log(`Changing order ${orderId} status to ${newStatus}`);
-    // Implement status change logic here
+  const handleAssignManufacturer = (order) => {
+    setSelectedOrderForAssignment(order);
+    setShowAssignModal(true);
   };
 
   const getStatusIcon = (status) => {
-    switch (status) {
-      case "Delivered":
+    switch (status?.toLowerCase()) {
+      case "delivered":
         return <CheckCircle className="h-4 w-4 text-green-600" />;
-      case "Shipped":
+      case "shipped":
         return <Truck className="h-4 w-4 text-blue-600" />;
-      case "Processing":
+      case "processing":
         return <Package className="h-4 w-4 text-yellow-600" />;
-      case "Pending":
+      case "confirmed":
+      case "pending":
         return <Clock className="h-4 w-4 text-orange-600" />;
-      case "Cancelled":
+      case "cancelled":
         return <XCircle className="h-4 w-4 text-red-600" />;
       default:
         return <Clock className="h-4 w-4 text-gray-600" />;
     }
   };
+
+  if (loading) {
+    return (
+      <div className="flex h-screen bg-gray-50 items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-gray-900"></div>
+          <p className="mt-4 text-gray-600">Loading orders...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex h-screen bg-gray-50">
@@ -188,8 +239,8 @@ const Orders = () => {
                   {
                     orderData.filter(
                       (order) =>
-                        order.status === "Pending" ||
-                        order.status === "Processing"
+                        order.status === "confirmed" ||
+                        order.status === "processing"
                     ).length
                   }
                 </p>
@@ -202,7 +253,7 @@ const Orders = () => {
                 </h3>
                 <p className="text-2xl font-bold text-green-600">
                   {
-                    orderData.filter((order) => order.status === "Delivered")
+                    orderData.filter((order) => order.status === "delivered")
                       .length
                   }
                 </p>
@@ -216,8 +267,11 @@ const Orders = () => {
                 <p className="text-2xl font-bold text-blue-600">
                   Rs.
                   {orderData
-                    .filter((order) => order.paymentStatus === "Paid")
-                    .reduce((sum, order) => sum + order.totalAmount, 0)
+                    .filter((order) => order.payment_status === "Paid")
+                    .reduce(
+                      (sum, order) => sum + parseFloat(order.total_amount || 0),
+                      0
+                    )
                     .toLocaleString()}
                 </p>
                 <p className="text-sm text-gray-500">From completed orders</p>
@@ -248,11 +302,11 @@ const Orders = () => {
                       }
                     >
                       <option value="">All Status</option>
-                      <option value="Pending">Pending</option>
-                      <option value="Processing">Processing</option>
-                      <option value="Shipped">Shipped</option>
-                      <option value="Delivered">Delivered</option>
-                      <option value="Cancelled">Cancelled</option>
+                      <option value="confirmed">Confirmed</option>
+                      <option value="processing">Processing</option>
+                      <option value="shipped">Shipped</option>
+                      <option value="delivered">Delivered</option>
+                      <option value="cancelled">Cancelled</option>
                     </select>
 
                     <select
@@ -337,10 +391,10 @@ const Orders = () => {
                           <div>
                             <div className="font-medium text-gray-900 flex items-center">
                               {getStatusIcon(order.status)}
-                              <span className="ml-2">{order.id}</span>
+                              <span className="ml-2">#{order.id}</span>
                             </div>
                             <div className="text-sm text-gray-500">
-                              {order.customer.name}
+                              {order.customer_name}
                             </div>
                           </div>
                         </div>
@@ -365,21 +419,32 @@ const Orders = () => {
                       <div className="space-y-1 text-sm text-gray-600">
                         <p>
                           <span className="font-medium">Amount:</span> ₹
-                          {order.totalAmount.toLocaleString()}
+                          {parseFloat(order.total_amount || 0).toLocaleString()}
                         </p>
                         <p>
                           <span className="font-medium">Payment:</span>{" "}
                           <span
                             className={`px-1 py-0.5 text-xs rounded ${getPaymentStatusColor(
-                              order.paymentStatus
+                              order.payment_status
                             )}`}
                           >
-                            {order.paymentStatus}
+                            {order.payment_status}
                           </span>
                         </p>
                         <p>
                           <span className="font-medium">Date:</span>{" "}
-                          {order.orderDate}
+                          {order.order_date}
+                        </p>
+                        <p>
+                          <span className="font-medium">Manufacturer:</span>{" "}
+                          {order.manufacturer_name || (
+                            <button
+                              onClick={() => handleAssignManufacturer(order)}
+                              className="text-blue-600 hover:text-blue-800"
+                            >
+                              Assign
+                            </button>
+                          )}
                         </p>
                       </div>
                     </div>
@@ -449,10 +514,7 @@ const Orders = () => {
                               <div>
                                 <div className="font-medium text-gray-900 flex items-center">
                                   {getStatusIcon(order.status)}
-                                  <span className="ml-2">{order.id}</span>
-                                </div>
-                                <div className="text-sm text-gray-500">
-                                  {order.orderDate}
+                                  <span className="ml-2">#{order.id}</span>
                                 </div>
                               </div>
                             </div>
@@ -460,66 +522,81 @@ const Orders = () => {
                           <td className="py-3 px-4">
                             <div>
                               <div className="font-medium text-gray-900">
-                                {order.customer.name}
+                                {order.customer_name}
                               </div>
                               <div className="text-sm text-gray-500">
-                                {order.customer.email}
+                                {order.customer_email}
                               </div>
                               <div className="text-sm text-gray-500 flex items-center">
                                 <Phone className="h-3 w-3 mr-1" />
-                                {order.customer.phone}
+                                {order.customer_phone}
                               </div>
                             </div>
                           </td>
                           <td className="py-3 px-4">
                             <div className="text-sm">
-                              {order.products.map((product, idx) => (
-                                <div key={idx} className="mb-1">
-                                  <span className="font-medium">
-                                    {product.name}
-                                  </span>
-                                  <span className="text-gray-500">
-                                    {" "}
-                                    x{product.quantity}
-                                  </span>
-                                </div>
-                              ))}
+                              {order.items &&
+                                order.items.map((product, idx) => (
+                                  <div key={idx} className="mb-1">
+                                    <span className="font-medium">
+                                      {product.product_name}
+                                    </span>
+                                    <span className="text-gray-500">
+                                      {" "}
+                                      x{product.quantity}
+                                    </span>
+                                  </div>
+                                ))}
                             </div>
                           </td>
                           <td className="py-3 px-4">
                             <div className="font-bold text-gray-900">
-                              Rs.{order.totalAmount.toLocaleString()}
+                              Rs.
+                              {parseFloat(
+                                order.total_amount || 0
+                              ).toLocaleString()}
                             </div>
                           </td>
                           <td className="py-3 px-4">
-                            <div className="font-bold text-gray-900">
-                              {order.assignedManufacturer}
+                            <div className="flex items-center space-x-2">
+                              {order.manufacturer_name ? (
+                                <span className="font-medium text-gray-900">
+                                  {order.manufacturer_name}
+                                </span>
+                              ) : (
+                                <button
+                                  onClick={() =>
+                                    handleAssignManufacturer(order)
+                                  }
+                                  className="px-3 py-1 bg-blue-600 text-white text-sm rounded hover:bg-blue-700 flex items-center"
+                                >
+                                  <UserCheck className="h-4 w-4 mr-1" />
+                                  Assign
+                                </button>
+                              )}
                             </div>
                           </td>
                           <td className="py-3 px-4">
                             <select
                               value={order.status}
-                              onChange={(e) =>
-                                handleStatusChange(order.id, e.target.value)
-                              }
                               className={`px-2 py-1 text-xs rounded-full border-0 focus:ring-2 focus:ring-blue-500 ${getStatusColor(
                                 order.status
                               )}`}
                             >
-                              <option value="Pending">Pending</option>
-                              <option value="Processing">Processing</option>
-                              <option value="Shipped">Shipped</option>
-                              <option value="Delivered">Delivered</option>
-                              <option value="Cancelled">Cancelled</option>
+                              <option value="confirmed">Confirmed</option>
+                              <option value="processing">Processing</option>
+                              <option value="shipped">Shipped</option>
+                              <option value="delivered">Delivered</option>
+                              <option value="cancelled">Cancelled</option>
                             </select>
                           </td>
                           <td className="py-3 px-4">
                             <span
                               className={`px-2 py-1 text-xs rounded-full ${getPaymentStatusColor(
-                                order.paymentStatus
+                                order.payment_status
                               )}`}
                             >
-                              {order.paymentStatus}
+                              {order.payment_status}
                             </span>
                           </td>
 
@@ -571,6 +648,70 @@ const Orders = () => {
           </div>
         </main>
       </div>
+
+      {/* Manufacturer Assignment Modal */}
+      {showAssignModal && selectedOrderForAssignment && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 w-full max-w-md mx-4">
+            <h3 className="text-lg font-semibold mb-4">
+              Assign Manufacturer to Order #{selectedOrderForAssignment.id}
+            </h3>
+            <div className="mb-4">
+              <p className="text-sm text-gray-600 mb-2">
+                Customer: {selectedOrderForAssignment.customer_name}
+              </p>
+              <p className="text-sm text-gray-600 mb-4">
+                Total Amount: Rs.
+                {parseFloat(
+                  selectedOrderForAssignment.total_amount || 0
+                ).toLocaleString()}
+              </p>
+            </div>
+            <div className="mb-6">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Select Manufacturer:
+              </label>
+              <select
+                id="manufacturerSelect"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                defaultValue=""
+              >
+                <option value="">Choose a manufacturer...</option>
+                {manufacturers.map((manufacturer) => (
+                  <option key={manufacturer.id} value={manufacturer.id}>
+                    {manufacturer.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className="flex space-x-3">
+              <button
+                onClick={() => {
+                  const select = document.getElementById("manufacturerSelect");
+                  const manufacturerId = select.value;
+                  if (manufacturerId) {
+                    assignManufacturer(
+                      selectedOrderForAssignment.id,
+                      manufacturerId
+                    );
+                  } else {
+                    alert("Please select a manufacturer");
+                  }
+                }}
+                className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+              >
+                Assign
+              </button>
+              <button
+                onClick={() => setShowAssignModal(false)}
+                className="flex-1 px-4 py-2 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

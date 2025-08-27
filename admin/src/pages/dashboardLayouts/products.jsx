@@ -29,54 +29,6 @@ const Products = () => {
   const [showAddModal, setShowAddModal] = useState(false);
   const [productData, setProductData] = useState([]);
 
-  const sidebarItems = [
-    { icon: Home, label: "Dashboard", active: false },
-    { icon: Users, label: "Agencies", active: false },
-    { icon: Users, label: "Users", active: true },
-    { icon: BarChart3, label: "Analytics", active: false },
-    { icon: Settings, label: "Settings", active: false },
-    { icon: HelpCircle, label: "Help", active: false },
-  ];
-
-  const mockData = [
-    {
-      id: 1,
-      name: "Cricket Jersey",
-      description: "Premium quality ",
-      price: "Rs.500",
-      type: "Men",
-      sport: "Cricket",
-      status: "Active",
-      stock: 25,
-      sold: 150,
-      createdDate: "2024-01-15",
-    },
-    {
-      id: 2,
-      name: "Football Jersey",
-      description: "Professional ",
-      price: "Rs.600",
-      type: "Women",
-      sport: "Football",
-      status: "Inactive",
-      stock: 12,
-      sold: 89,
-      createdDate: "2024-02-10",
-    },
-    {
-      id: 3,
-      name: "Basketball Jersey",
-      description: "Lightweight ",
-      price: "Rs.550",
-      type: "Kids",
-      sport: "Basketball",
-      status: "Active",
-      stock: 8,
-      sold: 75,
-      createdDate: "2024-01-20",
-    },
-  ];
-
   const getStatusColor = (status) => {
     switch (status) {
       case "Active":

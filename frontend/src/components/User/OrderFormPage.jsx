@@ -1,14 +1,12 @@
-/* eslint-disable no-unused-vars */
 import { useState, useEffect } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useAuth0 } from "@auth0/auth0-react";
 import Navbar from "./Navbar";
-//import axios from "axios";
 
 export default function OrderFormPage() {
   const { state } = useLocation();
   const navigate = useNavigate();
-  const { isAuthenticated, loginWithRedirect, isLoading } = useAuth0();
+  const { getAccessTokenSilently } = useAuth0();
 
   const [sportState, setSportState] = useState(state?.sport || "");
   const [fitState, setFitState] = useState(state?.fit || "");
@@ -17,6 +15,8 @@ export default function OrderFormPage() {
   const [quantity, setQuantity] = useState(1);
   const [address, setAddress] = useState("");
   const [designImage, setDesignImage] = useState(state?.designImage || "");
+  const [productId] = useState(state?.product_id || 1);
+  const [designId] = useState(state?.designId || null);
 
   useEffect(() => {
     const savedOrder = localStorage.getItem("pendingOrder");
@@ -34,35 +34,41 @@ export default function OrderFormPage() {
   }, []);
 
   const handleAddToCart = async () => {
-    if (!isAuthenticated && !isLoading) {
-      await loginWithRedirect({
-        appState: {
-          returnTo: "/order-form",
-          orderState: {
-            sport: sportState,
-            fit: fitState,
-            style: styleState,
-            size,
-            quantity,
-            address,
-            designImage,
-          },
-        },
-      });
-      return;
-    }
-    const order = {
-      sport: sportState,
-      fit: fitState,
-      style: styleState,
-      size,
-      quantity,
-      address,
-      designImage,
-    };
+    try {
+      const token = await getAccessTokenSilently();
 
-    console.log("🛒 Order Added:", order);
-    navigate("/cart");
+      const orderData = {
+        product_id: productId,
+        design_id: designId,
+        sizes: size,
+        quantity: parseInt(quantity),
+        customer_note: `Sport: ${sportState}, Fit: ${fitState}, Style: ${styleState}, Address: ${address}`,
+      };
+
+      console.log(" Order data:", orderData);
+
+      const response = await fetch("http://localhost:5000/api/customer/cart", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(orderData),
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        console.log(" Item added to cart successfully:", data);
+        navigate("/cart");
+      } else {
+        const errorData = await response.json();
+        console.error(" Error response:", errorData);
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+    } catch (error) {
+      console.error(" Error adding to cart:", error);
+      alert("Failed to add item to cart. Please try again.");
+    }
   };
 
   return (

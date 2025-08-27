@@ -1,189 +1,310 @@
-import React, { useState, useEffect } from 'react';
-import Navbar from './Navbar';
-import { useNavigate } from 'react-router-dom';
-import { ChevronLeft, ChevronRight, X } from 'lucide-react';
-import './SelectSportPage.css';
-
-const sports = [
-  { name: 'Football', image: '/assets/football.png' },
-  { name: 'Cricket', image: '/assets/cricket.png' },
-  { name: 'Rugby', image: '/assets/rugby.png' },
-  { name: 'Volleyball', image: '/assets/volleyball.png' },
-  { name: 'Basketball', image: '/assets/basketball.png' },
-  { name: 'Hockey', image: '/assets/hocky.png' },
-];
+import React, { useState, useEffect } from "react";
+import Navbar from "./Navbar";
+import { useNavigate } from "react-router-dom";
+import { ChevronLeft, ChevronRight, X, Box } from "lucide-react";
 
 export default function SelectSportPage() {
   const navigate = useNavigate();
-  const [currentIndex, setCurrentIndex] = useState(0);
-  const [rotationAngle, setRotationAngle] = useState(0);
-  
-  const [initialAnimationDone, setInitialAnimationDone] = useState(false);
+
+  const [products, setProducts] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  const [startIndex, setStartIndex] = useState(0);
   const [flippedIndex, setFlippedIndex] = useState(null);
 
-  // Calculate rotation angle based on current index
-  // const rotationAngle = currentIndex * -60; // -60° per step for 6 cards
-
+  // Fetch products from API
   useEffect(() => {
-    // Initial spinning animation
-    const spinInterval = setInterval(() => {
-      setRotationAngle((prev) => prev - 2);
-    }, 16);
-
-    const stopSpinTimeout = setTimeout(() => {
-      clearInterval(spinInterval);
-      setInitialAnimationDone(true);
-      
-
-      // Snap to nearest multiple of card spacing (60° here)
-      setRotationAngle((prev) => {
-        const spacing = 360 / sports.length;
-        return Math.round(prev / spacing) * spacing;
-      });
-    }, 1500);
-
-    return () => {
-      clearInterval(spinInterval);
-      clearTimeout(stopSpinTimeout);
+    const fetchProducts = async () => {
+      try {
+        const response = await fetch("http://localhost:5000/api/products");
+        if (response.ok) {
+          const data = await response.json();
+          console.log(" Products fetched:", data);
+          setProducts(data);
+          if (data.length === 0) {
+            console.log("No products in database, will show fallback");
+          }
+        } else {
+          console.error("Failed to fetch products");
+        }
+      } catch (error) {
+        console.error("Error fetching products:", error);
+      } finally {
+        setLoading(false);
+      }
     };
+
+    fetchProducts();
   }, []);
 
-const handleLeft = () => {
-  if (initialAnimationDone) {
-    setRotationAngle((prev) => prev + 60);
-    setCurrentIndex((prev) => (prev - 1 + sports.length) % sports.length);
-  }
-};
+  const baseSpots = [
+    {
+      name: "Cricket Jersey",
+      sport: "Cricket",
+      image: "/assets/cricket.png",
+      defaultPrice: 1500,
+    },
+    {
+      name: "Football Jersey",
+      sport: "Football",
+      image: "/assets/football.png",
+      defaultPrice: 1500,
+    },
+    {
+      name: "Rugby Jersey",
+      sport: "Rugby",
+      image: "/assets/rugby.png",
+      defaultPrice: 1500,
+    },
+    {
+      name: "Volleyball Jersey",
+      sport: "Volleyball",
+      image: "/assets/volleyball.png",
+      defaultPrice: 1500,
+    },
+    {
+      name: "Basketball Jersey",
+      sport: "Basketball",
+      image: "/assets/basketball.png",
+      defaultPrice: 1500,
+    },
+    {
+      name: "Hockey Jersey",
+      sport: "Hockey",
+      image: "/assets/hockey.avif",
+      defaultPrice: 1500,
+    },
+  ];
 
-const handleRight = () => {
-  if (initialAnimationDone) {
-    setRotationAngle((prev) => prev - 60);
-    setCurrentIndex((prev) => (prev + 1) % sports.length);
-  }
-};
+  const displaySports = baseSpots.map((baseSport, index) => {
+    // Check if this sport exists in database
+    const dbProduct = products.find((p) => p.name === baseSport.name);
 
-  const handleFlip = (index) => setFlippedIndex(index);
-  const handleUnflip = () => setFlippedIndex(null);
+    if (dbProduct) {
+      // Use database product data
+      return {
+        id: dbProduct.id,
+        name: baseSport.sport,
+        image: baseSport.image,
+        dbProduct: dbProduct,
+        isFromDatabase: true,
+      };
+    } else {
+      return {
+        id: index + 1000,
+        name: baseSport.sport,
+        image: baseSport.image,
+        dbProduct: {
+          id: index + 1000,
+          name: baseSport.name,
+          price: baseSport.defaultPrice,
+          status: "demo",
+        },
+        isFromDatabase: false,
+      };
+    }
+  });
+
+  const handleNext = () => {
+    if (startIndex + 3 < displaySports.length) {
+      setStartIndex(startIndex + 1);
+    }
+  };
+
+  const handlePrev = () => {
+    if (startIndex > 0) {
+      setStartIndex(startIndex - 1);
+    }
+  };
+
+  const handleSelect = (index) => {
+    setFlippedIndex(index);
+  };
+
+  const handleCancel = () => {
+    setFlippedIndex(null);
+  };
 
   const handleFitSelect = (sport, fit) => {
-    navigate(`/customize/${sport.toLowerCase()}/${fit.toLowerCase()}`);
+    if (!sport || !sport.name || !fit) {
+      console.error("Invalid sport or fit data:", { sport, fit });
+      return;
+    }
+
+    // Pass the product_id from database
+    navigate(`/customize/${sport.name.toLowerCase()}/${fit.toLowerCase()}`, {
+      state: { product_id: sport.id, product: sport.dbProduct },
+    });
   };
+
+  if (loading) {
+    return (
+      <>
+        <Navbar />
+        <div className="min-h-screen bg-gray-100 flex items-center justify-center">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+            <p className="text-gray-600">Loading sports...</p>
+          </div>
+        </div>
+      </>
+    );
+  }
 
   return (
     <>
       <Navbar />
-      <div className="min-h-screen bg-[#0d0d0f] text-white flex flex-col items-center justify-center relative overflow-hidden px-4">
-        {/* Responsive heading */}
-        <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold font-michroma capitalize absolute top-6 sm:top-10 z-10 animate-heading3D text-center px-4">
-          Choose Your Sport
-        </h1>
+      <div className="text-center py-10">
+        <h1 className="text-3xl font-bold font-michroma">Design Your Legacy</h1>
+        <p className="text-sm text-gray-500 mt-2">
+          Select a sport to begin your custom jersey creation journey.
+        </p>
 
-        {/* Navigation buttons */}
-        <button 
-          onClick={handleLeft} 
-          className="absolute left-2 sm:left-4 top-1/2 z-20 text-2xl sm:text-3xl hover:scale-110 transition-transform disabled:opacity-50"
-          disabled={!initialAnimationDone}
-        >
-          <ChevronLeft size={28} className="sm:w-8 sm:h-8" />
-        </button>
-        <button 
-          onClick={handleRight} 
-          className="absolute right-2 sm:right-4 top-1/2 z-20 text-2xl sm:text-3xl hover:scale-110 transition-transform disabled:opacity-50"
-          disabled={!initialAnimationDone}
-        >
-          <ChevronRight size={28} className="sm:w-8 sm:h-8" />
-        </button>
-
-        {/* Carousel container */}
-        <div className="carousel-container mt-24 sm:mt-32 lg:mt-36">
-          <div
-            className="carousel"
-            style={{
-              transform: `rotateY(${rotationAngle}deg)`,
-              transition: initialAnimationDone ? 'transform 0.8s cubic-bezier(0.4, 0, 0.2, 1)' : 'none',
-            }}
+        <div className="relative mt-10 max-w-5xl mx-auto px-4 overflow-hidden">
+          <button
+            onClick={handlePrev}
+            disabled={startIndex === 0}
+            className="absolute left-0 top-1/2 -translate-y-1/2 z-10 bg-white p-2 shadow rounded-full hover:bg-gray-100 disabled:opacity-30"
           >
-            {sports.map((sport, idx) => {
-              const angle = idx * 60; // Fixed 60° spacing
-              const isFlipped = flippedIndex === idx;
+            <ChevronLeft size={24} />
+          </button>
 
-              return (
+          <div className="overflow-hidden w-full">
+            <div
+              className="flex transition-transform duration-500 ease-in-out gap-6"
+              style={{
+                transform: `translateX(-${startIndex * (100 / 3)}%)`,
+                width: `${(displaySports.length * 100) / 7}%`,
+              }}
+            >
+              {displaySports.map((sport, index) => (
                 <div
-                  className="card"
-                  key={idx}
-                  style={{
-                    transform: `rotateY(${angle}deg) translateZ(var(--carousel-radius))`,
-                  }}
+                  key={index}
+                  className={`w-[300px] h-[480px] flex-shrink-0 transform transition-all duration-300 hover:-translate-y-2 hover:scale-105 ${
+                    flippedIndex === index ? "animate-border-glow" : ""
+                  }`}
                 >
-                  <div className={`card-inner ${isFlipped ? 'flipped' : ''}`}>
-                    {/* Front */}
-                    <div className="card-face card-front">
-                      <img
-                        src={sport.image}
-                        alt={sport.name}
-                        className="card-image"
-                      />
-                      <p className="card-title">{sport.name}</p>
-                      <button
-                        onClick={() => handleFlip(idx)}
-                        className="select-btn"
-                      >
-                        Select
-                      </button>
-                    </div>
+                  <div className="relative w-full h-full [perspective:1000px]">
+                    <div
+                      className={`relative w-full h-full duration-700 [transform-style:preserve-3d] ${
+                        flippedIndex === index ? "rotate-y-180" : ""
+                      }`}
+                    >
+                      {/* Front */}
+                      <div className="absolute w-full h-full backface-hidden">
+                        <div className="bg-white border rounded-md shadow p-4 text-center h-full flex flex-col">
+                          {/* Product Info */}
+                          <div className="mb-2">
+                            <div className="flex items-center justify-between text-xs text-gray-600">
+                              <span>
+                                {sport.isFromDatabase ? "Available" : "Demo"}
+                              </span>
+                              <span>Rs. {sport.dbProduct.price}</span>
+                            </div>
+                          </div>
 
-                    {/* Back */}
-                    <div className="card-face card-back">
-                      <button
-                        onClick={handleUnflip}
-                        className="close-btn"
-                      >
-                        <X size={16} className="sm:w-[18px] sm:h-[18px]" />
-                      </button>
+                          {/* 2D Image */}
+                          <div className="flex-1 flex flex-col justify-center">
+                            <img
+                              src={sport.image}
+                              alt={sport.name}
+                              className="h-[200px] mx-auto mb-2 object-contain"
+                            />
 
-                      <img
-                        src="/assets/logo.png"
-                        className="logo-image"
-                        alt="Logo"
-                      />
-                      <p className="fit-title">
-                        Choose Fit
-                      </p>
+                            {/* 3D Model Preview */}
+                            <div
+                              className={`rounded-lg p-3 mb-3 ${
+                                sport.isFromDatabase
+                                  ? "bg-green-100"
+                                  : "bg-gray-100"
+                              }`}
+                            >
+                              <div className="flex items-center justify-center text-gray-600">
+                                <Box className="mr-2" size={20} />
+                                <span className="text-sm">
+                                  {sport.isFromDatabase
+                                    ? "3D Model Available"
+                                    : "3D Model Unavailable"}
+                                </span>
+                              </div>
+                              {sport.isFromDatabase &&
+                                sport.name.toLowerCase() === "cricket" && (
+                                  <p className="text-xs text-blue-600 mt-1">
+                                    Interactive 3D Jersey Preview
+                                  </p>
+                                )}
+                              {!sport.isFromDatabase && (
+                                <p className="text-xs text-orange-600 mt-1">
+                                  3D Model will be available soon
+                                </p>
+                              )}
+                            </div>
+                          </div>
 
-                      <div className="fit-buttons">
-                        {['Mens', 'Womens', 'Kids', 'Unisex'].map((fit) => (
-                          <button
-                            key={fit}
-                            onClick={() => handleFitSelect(sport.name, fit)}
-                            className="fit-btn"
-                          >
-                            {fit}
-                          </button>
-                        ))}
+                          <div>
+                            <h3 className="font-bold text-lg mb-1">
+                              {sport.name}
+                            </h3>
+                            <p className="text-sm text-gray-600 mb-3">
+                              {sport.dbProduct.name}
+                            </p>
+                            <button
+                              onClick={() => handleSelect(index)}
+                              className="w-full bg-black text-white px-4 py-2 rounded hover:bg-gray-800 active:scale-95 transition"
+                            >
+                              Select Sport
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Back */}
+                      <div className="absolute w-full h-full backface-hidden rotate-y-180 bg-gradient-to-tr from-yellow-100 to-white border shadow p-4 flex flex-col items-center justify-center relative rounded-md">
+                        {/* Cancel button */}
+                        <button
+                          onClick={handleCancel}
+                          className="absolute bottom-1 right-1/2 translate-x-1/2 bg-gray-200 hover:bg-red-400 text-black p-1 rounded-full shadow"
+                        >
+                          <X size={18} />
+                        </button>
+
+                        {/* Car and message */}
+                        <img
+                          src="/assets/logo.png"
+                          className="w-24 animate-carZoom mb-4"
+                          alt="Car"
+                        />
+                        <p className="text-lg font-semibold text-gray-800 mb-4 font-michroma">
+                          Choose Your Perfect Fit
+                        </p>
+
+                        {/* Fit options */}
+                        <div className="grid grid-cols-2 gap-2">
+                          {["Mens", "Womens", "Kids", "Unisex"].map((fit) => (
+                            <button
+                              key={fit}
+                              onClick={() => handleFitSelect(sport, fit)}
+                              className="bg-black text-white px-4 py-2 rounded hover:bg-gray-800 active:scale-95 transition text-sm"
+                            >
+                              {fit}
+                            </button>
+                          ))}
+                        </div>
                       </div>
                     </div>
                   </div>
                 </div>
-              );
-            })}
+              ))}
+            </div>
           </div>
-        </div>
 
-        {/* Dots indicator */}
-        <div className="dots-container">
-          {sports.map((_, idx) => (
-            <button
-              key={idx}
-              onClick={() => {
-                if (initialAnimationDone) {
-                  setCurrentIndex(idx);          // just for active class
-                  setRotationAngle(idx * -60);   // actual rotation
-                }
-              }}
-              className={`dot ${idx === currentIndex ? 'active' : ''}`}
-              disabled={!initialAnimationDone}
-            />
-          ))}
+          <button
+            onClick={handleNext}
+            disabled={startIndex + 3 >= displaySports.length}
+            className="absolute right-0 top-1/2 -translate-y-1/2 z-10 bg-white p-2 shadow rounded-full hover:bg-gray-100 disabled:opacity-30"
+          >
+            <ChevronRight size={24} />
+          </button>
         </div>
       </div>
     </>
