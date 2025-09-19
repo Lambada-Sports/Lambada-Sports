@@ -22,8 +22,10 @@ exports.addDesign = async (req, res) => {
       `INSERT INTO design (customer_id, product_id, design_data) VALUES ($1, $2, $3) RETURNING *`,
       [customer_id, product_id, design_data]
     );
+    console.log(" Design saved successfully with ID:", result.rows[0].id);
     res.status(201).json(result.rows[0]);
   } catch (error) {
+    console.error(" Error saving design:", error);
     res.status(500).json({ error: "Failed to add design" });
   }
 };
@@ -69,7 +71,20 @@ exports.getCart = async (req, res) => {
   `,
       [cart_id]
     );
-    console.log(" Cart items found:", items.rows);
+    console.log(" Cart items found:", items.rows.length);
+    items.rows.forEach((item, index) => {
+      console.log(`🛒 Item ${index + 1}:`, {
+        id: item.id,
+        name: item.name,
+        design_id: item.design_id,
+        design_data_type: typeof item.design_data,
+        design_data_preview: item.design_data
+          ? typeof item.design_data === "string"
+            ? item.design_data.substring(0, 100) + "..."
+            : Object.keys(item.design_data)
+          : "No design data",
+      });
+    });
     res.json(items.rows);
   } catch (error) {
     console.error(" Error in getCart:", error);

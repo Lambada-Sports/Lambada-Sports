@@ -1,5 +1,4 @@
 import { useState } from "react";
-import { useAuth0 } from "@auth0/auth0-react";
 import Sidebar from "../components/ManufacturerSidebar";
 import { Menu } from "lucide-react";
 import Orders from "./manufacturerLayouts/orders";
@@ -8,25 +7,15 @@ import Dashboard from "./manufacturerLayouts/dashboard";
 const ManufacturerDashboard = () => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [activePage, setActivePage] = useState("Dashboard");
-  const { logout } = useAuth0();
 
   const handleSidebarItemClick = (item) => {
     setActivePage(item.label);
-    // Close sidebar on mobile after selection
     setIsSidebarOpen(false);
     console.log("Navigation to:", item.path);
   };
 
   const handleSidebarToggle = () => {
     setIsSidebarOpen(!isSidebarOpen);
-  };
-
-  const handleLogout = () => {
-    logout({
-      logoutParams: {
-        returnTo: window.location.origin,
-      },
-    });
   };
 
   const renderPageContent = () => {
@@ -61,7 +50,6 @@ const ManufacturerDashboard = () => {
         onClose={() => setIsSidebarOpen(false)}
         activeItem={activePage}
         onItemClick={handleSidebarItemClick}
-        onLogout={handleLogout}
       />
 
       {/* Main Content Area */}

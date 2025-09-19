@@ -30,7 +30,22 @@ export default function CartPage() {
 
       if (response.ok) {
         const data = await response.json();
-        console.log(" Cart items fetched:", data);
+        console.log("🛒 Cart items fetched:", data);
+        data.forEach((item, index) => {
+          console.log(`🛒 Cart Item ${index + 1}:`, {
+            id: item.id,
+            name: item.name,
+            design_id: item.design_id,
+            design_data_type: typeof item.design_data,
+            design_data_preview: item.design_data
+              ? typeof item.design_data === "string"
+                ? item.design_data.substring(0, 100) + "..."
+                : `Object with keys: ${Object.keys(item.design_data).join(
+                    ", "
+                  )}`
+              : "No design data",
+          });
+        });
         setCartItems(data);
       } else {
         throw new Error(`HTTP error! status: ${response.status}`);
@@ -191,9 +206,21 @@ export default function CartPage() {
                         <div className="flex-shrink-0">
                           <div className="w-32 h-32 bg-gray-50 rounded-lg p-2 border">
                             <img
-                              src={item.design_data}
+                              src={
+                                typeof item.design_data === "string"
+                                  ? item.design_data
+                                  : item.design_data.imageURL ||
+                                    item.design_data
+                              }
                               alt="Custom Design"
                               className="w-full h-full object-contain"
+                              onError={(e) => {
+                                console.error(
+                                  "Design image failed to load:",
+                                  item.design_data
+                                );
+                                e.target.style.display = "none";
+                              }}
                             />
                           </div>
                           <p className="text-xs text-gray-500 text-center mt-1">

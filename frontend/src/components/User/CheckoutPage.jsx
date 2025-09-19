@@ -291,23 +291,36 @@ export default function CheckoutPage() {
                     key={index}
                     className="flex items-center space-x-4 pb-4 border-b"
                   >
-                    {item.designImage && (
+                    {item.design_data && (
                       <img
-                        src={item.designImage}
+                        src={
+                          typeof item.design_data === "string"
+                            ? item.design_data
+                            : item.design_data.imageURL || item.design_data
+                        }
                         alt="Custom Design"
                         className="w-16 h-16 object-contain bg-gray-50 rounded"
+                        onError={(e) => {
+                          console.error(
+                            "Design image failed to load in checkout:",
+                            item.design_data
+                          );
+                          e.target.style.display = "none";
+                        }}
                       />
                     )}
                     <div className="flex-1">
                       <h3 className="font-semibold text-gray-800">
-                        Custom {item.sport} Jersey
+                        {item.name || "Custom Sports Jersey"}
                       </h3>
                       <p className="text-sm text-gray-600">
-                        {item.fit} • {item.style} • Size: {item.size}
+                        Size: {item.sizes} • Qty: {item.quantity}
                       </p>
-                      <p className="text-sm text-gray-600">
-                        Quantity: {item.quantity}
-                      </p>
+                      {item.customer_note && (
+                        <p className="text-sm text-gray-600">
+                          {item.customer_note}
+                        </p>
+                      )}
                     </div>
                     <div className="text-right">
                       <p className="font-semibold text-gray-800">

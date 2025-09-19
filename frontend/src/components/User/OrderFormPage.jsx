@@ -45,8 +45,6 @@ export default function OrderFormPage() {
         customer_note: `Sport: ${sportState}, Fit: ${fitState}, Style: ${styleState}, Address: ${address}`,
       };
 
-      console.log(" Order data:", orderData);
-
       const response = await fetch("http://localhost:5000/api/customer/cart", {
         method: "POST",
         headers: {
@@ -58,15 +56,15 @@ export default function OrderFormPage() {
 
       if (response.ok) {
         const data = await response.json();
-        console.log(" Item added to cart successfully:", data);
+        console.log("Item added to cart successfully:", data);
         navigate("/cart");
       } else {
         const errorData = await response.json();
-        console.error(" Error response:", errorData);
+        console.error("Error response:", errorData);
         throw new Error(`HTTP error! status: ${response.status}`);
       }
     } catch (error) {
-      console.error(" Error adding to cart:", error);
+      console.error("Error adding to cart:", error);
       alert("Failed to add item to cart. Please try again.");
     }
   };
