@@ -22,8 +22,7 @@ const Sidebar = ({
     { icon: Shirt, label: "Products", path: "/products" },
     { icon: ListOrdered, label: "Orders", path: "/orders" },
     { icon: Users, label: "Customers", path: "/customers" },
-    { icon: Container, label: "Inventory", path: "/inventory" },
-    { icon: BarChart3, label: "Analytics", path: "/analytics" },
+
     { icon: Settings, label: "Settings", path: "/settings" },
   ];
 

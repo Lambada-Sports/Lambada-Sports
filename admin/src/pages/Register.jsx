@@ -1,15 +1,22 @@
 import React, { useState } from "react";
-import { Eye, EyeOff, Mail, Lock, ArrowRight } from "lucide-react";
+import { Eye, EyeOff, Mail, Lock, User, ArrowRight } from "lucide-react";
 import { Link } from "react-router-dom";
 
-const Login = () => {
+const Register = () => {
+  const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (password !== confirmPassword) {
+      alert("Passwords do not match!");
+      return;
+    }
     setIsLoading(true);
     // Simulate API call
     await new Promise((resolve) => setTimeout(resolve, 2000));
@@ -26,8 +33,8 @@ const Login = () => {
       </div>
 
       <div className="relative w-full max-w-md mx-auto mt-5">
-        <div className="bg-white rounded-3xl shadow-2xl overflow-hidden min-h-[400px]">
-          {/* Login Form */}
+        <div className="bg-white rounded-3xl shadow-2xl overflow-hidden min-h-[480px]">
+          {/* Register Form */}
           <div className="p-5 lg:p-8 flex flex-col justify-center">
             <div className="max-w-xs mx-auto w-full">
               {/* Logo and Header */}
@@ -36,12 +43,35 @@ const Login = () => {
                   <img className="text-white" src="/fit.jpg" alt="Logo" />
                 </div>
                 <h1 className="text-2xl lg:text-3xl font-bold text-gray-900 mb-2">
-                  Login
+                  Create Account
                 </h1>
               </div>
 
-              {/* Login Form */}
               <div className="space-y-6">
+                {/* Name Field */}
+                <div>
+                  <label
+                    htmlFor="name"
+                    className="block text-sm font-medium text-gray-700 mb-2"
+                  >
+                    Full Name
+                  </label>
+                  <div className="relative">
+                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                      <User className="h-5 w-5 text-gray-400" />
+                    </div>
+                    <input
+                      id="name"
+                      type="text"
+                      value={name}
+                      onChange={(e) => setName(e.target.value)}
+                      className="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors bg-gray-50 focus:bg-white"
+                      placeholder="Enter your full name"
+                      required
+                    />
+                  </div>
+                </div>
+
                 {/* Email Field */}
                 <div>
                   <label
@@ -101,6 +131,43 @@ const Login = () => {
                   </div>
                 </div>
 
+                {/* Confirm Password Field */}
+                <div>
+                  <label
+                    htmlFor="confirmPassword"
+                    className="block text-sm font-medium text-gray-700 mb-2"
+                  >
+                    Confirm Password
+                  </label>
+                  <div className="relative">
+                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                      <Lock className="h-5 w-5 text-gray-400" />
+                    </div>
+                    <input
+                      id="confirmPassword"
+                      type={showConfirmPassword ? "text" : "password"}
+                      value={confirmPassword}
+                      onChange={(e) => setConfirmPassword(e.target.value)}
+                      className="block w-full pl-10 pr-12 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors bg-gray-50 focus:bg-white"
+                      placeholder="Confirm your password"
+                      required
+                    />
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setShowConfirmPassword(!showConfirmPassword)
+                      }
+                      className="absolute inset-y-0 right-0 pr-3 flex items-center"
+                    >
+                      {showConfirmPassword ? (
+                        <EyeOff className="h-5 w-5 text-gray-400 hover:text-gray-600" />
+                      ) : (
+                        <Eye className="h-5 w-5 text-gray-400 hover:text-gray-600" />
+                      )}
+                    </button>
+                  </div>
+                </div>
+
                 {/* Submit Button */}
                 <div className="flex justify-center">
                   <button
@@ -111,26 +178,26 @@ const Login = () => {
                     {isLoading ? (
                       <>
                         <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>
-                        Signing in...
+                        Creating...
                       </>
                     ) : (
                       <>
-                        Login
+                        Register
                         <ArrowRight className="ml-2 h-4 w-4 group-hover:translate-x-1 transition-transform" />
                       </>
                     )}
                   </button>
                 </div>
 
-                {/* Register Link */}
+                {/* Login Link */}
                 <div className="text-center">
                   <p className="text-sm text-gray-600 mt-4">
-                    Don’t have an account?{" "}
+                    Already have an account?{" "}
                     <Link
-                      to="/register"
+                      to="/"
                       className="text-blue-600 font-medium hover:underline"
                     >
-                      Register
+                      Login
                     </Link>
                   </p>
                 </div>
@@ -143,4 +210,4 @@ const Login = () => {
   );
 };
 
-export default Login;
+export default Register;

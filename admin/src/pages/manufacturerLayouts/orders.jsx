@@ -1,5 +1,4 @@
-/* eslint-disable no-unused-vars */
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   Search,
   Download,
@@ -20,57 +19,82 @@ const Orders = () => {
     priority: "",
     dateRange: "",
   });
-  const [sortBy, setSortBy] = useState("deadline");
-  const [sortOrder, setSortOrder] = useState("asc");
+  const [orders, setOrders] = useState([]);
 
-  // Production Orders Data
-  const productionOrders = [
-    {
-      id: "PRD-001",
-      products: [
+  useEffect(() => {
+    const fetchOrders = async () => {
+      try {
+        const response = await fetch(
+          "http://localhost:5000/api/manufacturer/orders",
+          {
+            method: "GET",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${localStorage.getItem("token")}`,
+            },
+          }
+        );
+        if (!response.ok) {
+          throw new Error("Failed to fetch orders");
+        }
+        const orders = await response.json();
+
+        const newOrders = orders.map((order) => ({
+          id: order.order_id,
+          products: Array.isArray(order.products) ? order.products : [],
+          totalQuantity: order.total_quantity,
+          status: order.status,
+          customer: {
+            name: order.customer_name || "Unknown",
+            email: order.customer_email || "N/A",
+          },
+          assets: {
+            available: order.assets_available || false,
+            files: Array.isArray(order.asset_files) ? order.asset_files : [],
+            templates: order.template_count || 0,
+          },
+        }));
+        setOrders(newOrders);
+      } catch (err) {
+        console.error("Error fetching orders:", err);
+      }
+    };
+
+    fetchOrders();
+  }, []);
+
+  const handleDownloadAssets = async (orderId) => {
+    try {
+      const response = await fetch(
+        `http://localhost:5000/api/manufacturer/orders/${orderId}/pdf`,
         {
-          name: "Football Jersey ",
-        },
-        { name: "Matching Shorts" },
-      ],
-      totalQuantity: 2,
-      deadline: "2025-01-28",
-      status: "In Production",
-      priority: "High",
-      customer: {
-        name: "John Martinez",
-        email: "john@bluelionsfc.com",
-      },
-      assignedDate: "2025-01-15",
-      assets: {
-        available: true,
-        files: ["design_specs.pdf", "logo_files.zip", "size_chart.pdf"],
-        templates: 3,
-      },
-    },
-    {
-      id: "PRD-002",
-      products: [
-        {
-          name: "Basketball Jersey ",
-        },
-      ],
-      totalQuantity: 4,
-      deadline: "2025-02-05",
-      status: "Materials Sourcing",
-      priority: "Medium",
-      customer: {
-        name: "Sarah Williams",
-        email: "sarah@thunderhoops.com",
-      },
-      assignedDate: "2025-01-18",
-      assets: {
-        available: true,
-        files: ["jersey_design.ai", "number_templates.zip"],
-        templates: 2,
-      },
-    },
-  ];
+          method: "GET",
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+          },
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error("Failed to download PDF");
+      }
+
+      // Get the blob
+      const blob = await response.blob();
+
+      // Create a download link
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `order_${orderId}.pdf`;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+    } catch (err) {
+      console.error("Error downloading PDF:", err);
+    }
+  };
 
   // Helper functions for production status styling
   const getStatusColor = (status) => {
@@ -138,11 +162,11 @@ const Orders = () => {
 
   const handleSelectAll = (checked) => {
     if (checked) {
-      setSelectedOrders(productionOrders.map((order) => order.id));
+      setSelectedOrders(orders.map((order) => order.id));
     } else {
       setSelectedOrders([]);
     }
-    setShowBulkActions(checked && productionOrders.length > 0);
+    setShowBulkActions(checked && orders.length > 0);
   };
 
   const handleSelectOrder = (orderId, checked) => {
@@ -169,17 +193,6 @@ const Orders = () => {
     // Implement status change logic here
   };
 
-  const handleDownloadAssets = (orderId) => {
-    const order = productionOrders.find((o) => o.id === orderId);
-    if (order && order.assets.available) {
-      console.log(
-        `Downloading assets for order ${orderId}:`,
-        order.assets.files
-      );
-      // Implement asset download logic here
-    }
-  };
-
   return (
     <div className="flex h-screen bg-gray-50">
       {/* Main Content */}
@@ -198,7 +211,7 @@ const Orders = () => {
                   Total Orders
                 </h3>
                 <p className="text-2xl font-bold text-gray-900">
-                  {productionOrders.length}
+                  {orders.length}
                 </p>
                 <p className="text-sm text-gray-500">Assigned to you</p>
               </div>
@@ -209,7 +222,7 @@ const Orders = () => {
                 </h3>
                 <p className="text-2xl font-bold text-yellow-600">
                   {
-                    productionOrders.filter(
+                    orders.filter(
                       (order) =>
                         order.status === "In Production" ||
                         order.status === "Quality Check"
@@ -225,9 +238,8 @@ const Orders = () => {
                 </h3>
                 <p className="text-2xl font-bold text-green-600">
                   {
-                    productionOrders.filter(
-                      (order) => order.status === "Ready to Ship"
-                    ).length
+                    orders.filter((order) => order.status === "Ready to Ship")
+                      .length
                   }
                 </p>
                 <p className="text-sm text-gray-500">Completed orders</p>
@@ -239,7 +251,7 @@ const Orders = () => {
                 </h3>
                 <p className="text-2xl font-bold text-red-600">
                   {
-                    productionOrders.filter(
+                    orders.filter(
                       (order) =>
                         order.priority === "High" &&
                         getDaysUntilDeadline(order.deadline) <= 3
@@ -331,7 +343,7 @@ const Orders = () => {
               <div className="p-4">
                 {/* Mobile Cards View */}
                 <div className="lg:hidden space-y-4">
-                  {productionOrders.slice(0, 5).map((order, index) => (
+                  {orders.slice(0, 5).map((order, index) => (
                     <div
                       key={index}
                       className="bg-gray-50 rounded-lg p-4 border"
@@ -415,9 +427,8 @@ const Orders = () => {
                             className="mr-2"
                             onChange={(e) => handleSelectAll(e.target.checked)}
                             checked={
-                              selectedOrders.length ===
-                                productionOrders.length &&
-                              productionOrders.length > 0
+                              selectedOrders.length === orders.length &&
+                              orders.length > 0
                             }
                           />
                           Order ID
@@ -428,9 +439,7 @@ const Orders = () => {
                         <th className="text-left py-3 px-4 font-medium text-gray-700">
                           Quantity
                         </th>
-                        <th className="text-left py-3 px-4 font-medium text-gray-700">
-                          Deadline
-                        </th>
+
                         <th className="text-left py-3 px-4 font-medium text-gray-700">
                           Status
                         </th>
@@ -443,7 +452,7 @@ const Orders = () => {
                       </tr>
                     </thead>
                     <tbody>
-                      {productionOrders.map((order, index) => (
+                      {orders.map((order, index) => (
                         <tr
                           key={index}
                           className={`border-b border-gray-100 hover:bg-gray-50 ${
@@ -472,37 +481,20 @@ const Orders = () => {
                           <td className="py-3 px-4">
                             <div className="text-sm">
                               {order.products.map((product, idx) => (
-                                <div key={idx} className="mb-2">
+                                <div key={idx}>
                                   <div className="font-medium text-gray-900">
-                                    {product.name}
+                                    {product.product_name}
                                   </div>
                                 </div>
                               ))}
                             </div>
                           </td>
                           <td className="py-3 px-4">
-                            <div className="font-bold text-gray-900 text-lg">
+                            <div className="font-bold text-gray-900 text-base">
                               {order.totalQuantity}
                             </div>
-                            <div className="text-xs text-gray-500">pieces</div>
                           </td>
-                          <td className="py-3 px-4">
-                            <div
-                              className={`font-medium ${getDeadlineColor(
-                                order.deadline
-                              )}`}
-                            >
-                              {order.deadline}
-                            </div>
 
-                            <span
-                              className={`px-1 py-0.5 text-xs rounded border ${getPriorityColor(
-                                order.priority
-                              )}`}
-                            >
-                              {order.priority}
-                            </span>
-                          </td>
                           <td className="py-3 px-4">
                             <select
                               value={order.status}
@@ -566,8 +558,8 @@ const Orders = () => {
                 {/* Pagination */}
                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mt-6 pt-4 border-t border-gray-200">
                   <p className="text-sm text-gray-700 mb-4 sm:mb-0">
-                    Showing 1 to {productionOrders.length} of{" "}
-                    {productionOrders.length} production orders
+                    Showing 1 to {orders.length} of {orders.length} production
+                    orders
                   </p>
                   <div className="flex items-center space-x-2">
                     <button

@@ -1,5 +1,4 @@
 import { useState } from "react";
-import { useAuth0 } from "@auth0/auth0-react";
 import Settings from "../pages/dashboardLayouts/setting";
 import Sidebar from "../components/Sidebar";
 import { Menu } from "lucide-react";
@@ -13,25 +12,15 @@ import Dashboard from "./dashboardLayouts/dashboard";
 const AdminDashboard = () => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [activePage, setActivePage] = useState("Dashboard");
-  const { logout } = useAuth0();
 
   const handleSidebarItemClick = (item) => {
     setActivePage(item.label);
-    // Close sidebar on mobile after selection
     setIsSidebarOpen(false);
     console.log("Navigation to:", item.path);
   };
 
   const handleSidebarToggle = () => {
     setIsSidebarOpen(!isSidebarOpen);
-  };
-
-  const handleLogout = () => {
-    logout({
-      logoutParams: {
-        returnTo: window.location.origin,
-      },
-    });
   };
 
   const renderPageContent = () => {
@@ -48,14 +37,8 @@ const AdminDashboard = () => {
       case "Customers":
         return <Customers />;
 
-      case "Analytics":
-        return <AnalyticsDashboard />;
-
       case "Settings":
         return <Settings />;
-
-      case "Inventory":
-        return <Inventory />;
 
       default:
         return (
@@ -81,7 +64,6 @@ const AdminDashboard = () => {
         onClose={() => setIsSidebarOpen(false)}
         activeItem={activePage}
         onItemClick={handleSidebarItemClick}
-        onLogout={handleLogout}
       />
 
       {/* Main Content Area */}
@@ -98,7 +80,7 @@ const AdminDashboard = () => {
             <h1 className="text-lg font-semibold text-gray-900">
               {activePage}
             </h1>
-            <div className="w-10"></div> {/* Spacer */}
+            <div className="w-10"></div>
           </div>
         </header>
 
