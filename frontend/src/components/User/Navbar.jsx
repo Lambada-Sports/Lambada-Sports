@@ -1,94 +1,145 @@
-import { useAuth0 } from "@auth0/auth0-react";
-import { Link, useLocation } from "react-router-dom";
-import { ShoppingCart } from "lucide-react";
-import { useState, useEffect } from "react";
+import React, { useState } from 'react';
+import { ChevronDown, Menu, X, Search, ShoppingCart } from 'lucide-react';
 
-export default function Navbar() {
-  const { isAuthenticated, loginWithRedirect, logout, isLoading } = useAuth0();
-  const location = useLocation();
-  const [cartItemCount, setCartItemCount] = useState(0);
+const Navbar = () => {
+  const [isOpen, setIsOpen] = useState(false);
+  const [shopDropdown, setShopDropdown] = useState(false);
+  const [sportsDropdown, setSportsDropdown] = useState(false);
 
-  // Update cart count when component mounts and when localStorage changes
-  useEffect(() => {
-    const updateCartCount = () => {
-      const cart = JSON.parse(localStorage.getItem("lambada_cart") || "[]");
-      const totalItems = cart.reduce((sum, item) => sum + item.quantity, 0);
-      setCartItemCount(totalItems);
-    };
+  const shopItems = [
+    'Jerseys',
+    'Tracksuits', 
+    'Bottom & Shorts',
+    'Lifestyle Kits',
+    'Bestsellers',
+    'Hoodies and Tees',
+    'Accessories',
+    'Custom Jersey'
+  ];
 
-    updateCartCount();
-
-    // Listen for storage changes (when items are added to cart)
-    window.addEventListener("storage", updateCartCount);
-
-    // Custom event for when cart is updated from same window
-    window.addEventListener("cartUpdated", updateCartCount);
-
-    return () => {
-      window.removeEventListener("storage", updateCartCount);
-      window.removeEventListener("cartUpdated", updateCartCount);
-    };
-  }, []);
-
-  const handleLogin = () => {
-    loginWithRedirect({
-      authorizationParams: {
-        screen_hint: "login",
-      },
-      appState: { returnTo: location.pathname },
-    });
-  };
+  const sportsItems = [
+    'Cricket',
+    'Football', 
+    'Rugby',
+    'Volleyball',
+    'Basketball',
+    'Hockey'
+  ];
 
   return (
-    <nav className="bg-zinc-400/20 shadow-md py-4">
-      <div className="max-w-8xl mx-auto px-1 flex justify-between items-center">
-        <div className="flex items-center space-x-2 ml-6">
-          <img src="/assets/logo.png" alt="Logo" className="h-10 w-auto" />
-        </div>
-
-        <div className="flex items-center gap-2 mr-6">
-          <Link to="/">
-            <button className=" text-black px-4 py-2 rounded hover:bg-green-500 transition">
+    <nav className="bg-white shadow-lg sticky top-0 z-50">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="flex justify-between items-center h-16">
+          {/* Left Menu Items */}
+          <div className="hidden md:flex items-center space-x-8">
+            <a href="#" className="text-gray-900 hover:text-green-600 px-3 py-2 text-lg font-medium transition-colors">
               Home
-            </button>
-          </Link>
-
-          {/* Cart Button */}
-          <Link to="/cart">
-            <button className="relative text-black px-4 py-2 rounded hover:bg-blue-500 transition flex items-center gap-2">
-              <ShoppingCart size={20} />
-              Cart
-              {cartItemCount > 0 && (
-                <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
-                  {cartItemCount}
-                </span>
+            </a>
+            
+            {/* Shop Dropdown */}
+            <div className="relative">
+              <button
+                onClick={() => setShopDropdown(!shopDropdown)}
+                className="text-gray-900 hover:text-green-600 px-3 py-2 text-lg font-medium flex items-center transition-colors"
+              >
+                Shop <ChevronDown className="ml-1 h-4 w-4" />
+              </button>
+              {shopDropdown && (
+                <div className="absolute top-full left-0 mt-1 w-48 bg-white shadow-lg rounded-md border border-gray-200 z-50">
+                  {shopItems.map((item) => (
+                    <a
+                      key={item}
+                      href="#"
+                      className="block px-4 py-2 text-sm text-gray-700 hover:bg-green-50 hover:text-green-600 transition-colors"
+                    >
+                      {item}
+                    </a>
+                  ))}
+                </div>
               )}
-            </button>
-          </Link>
+            </div>
+            
+            {/* Sports Dropdown */}
+            <div className="relative">
+              <button
+                onClick={() => setSportsDropdown(!sportsDropdown)}
+                className="text-gray-900 hover:text-green-600 px-3 py-2 text-lg font-medium flex items-center transition-colors"
+              >
+                Sports <ChevronDown className="ml-1 h-4 w-4" />
+              </button>
+              {sportsDropdown && (
+                <div className="absolute top-full left-0 mt-1 w-48 bg-white shadow-lg rounded-md border border-gray-200 z-50">
+                  {sportsItems.map((sport) => (
+                    <a
+                      key={sport}
+                      href="#"
+                      className="block px-4 py-2 text-sm text-gray-700 hover:bg-green-50 hover:text-green-600 transition-colors"
+                    >
+                      {sport}
+                    </a>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
 
-          {isLoading ? null : isAuthenticated ? (
-            <>
-              <button
-                onClick={() =>
-                  logout({ logoutParams: { returnTo: window.location.origin } })
-                }
-                className=" text-black px-4 py-2 rounded hover:bg-red-500 transition"
-              >
-                Logout
-              </button>
-            </>
-          ) : (
-            <>
-              <button
-                onClick={handleLogin}
-                className=" text-black px-4 py-2 rounded hover:bg-blue-500 transition"
-              >
-                Login
-              </button>
-            </>
-          )}
+          {/* Center Logo */}
+          <div className="flex items-center">
+            <div className="flex-shrink-0 flex items-center">
+              {/* Logo placeholder - you can replace with actual logo */}
+              <div className="w-12 h-12 bg-gradient-to-br from-green-500 to-green-700 rounded-lg flex items-center justify-center">
+                <span className="text-white font-bold text-xl">AF</span>
+              </div>
+              <span className="ml-2 text-xl font-bold text-gray-900">ATHLETIC FIT</span>
+            </div>
+          </div>
+
+          {/* Right Menu Items */}
+          <div className="hidden md:flex items-center space-x-8">
+            <a href="#" className="text-gray-900 hover:text-green-600 px-3 py-2 text-lg font-medium transition-colors">
+              About us
+            </a>
+            <a href="#" className="text-gray-900 hover:text-green-600 px-3 py-2 text-lg font-medium transition-colors">
+              Faq
+            </a>
+            
+            {/* Search Icon */}
+            <button className="text-gray-900 hover:text-green-600 p-2 transition-colors">
+              <Search className="h-6 w-6" />
+            </button>
+            
+            {/* Cart Icon */}
+            <button className="text-gray-900 hover:text-green-600 p-2 transition-colors">
+              <ShoppingCart className="h-6 w-6" />
+            </button>
+          </div>
+
+          {/* Mobile menu button */}
+          <div className="md:hidden flex items-center">
+            <button
+              onClick={() => setIsOpen(!isOpen)}
+              className="text-gray-900 hover:text-green-600 p-2"
+            >
+              {isOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
+            </button>
+          </div>
         </div>
+
+        {/* Mobile Menu */}
+        {isOpen && (
+          <div className="md:hidden">
+            <div className="px-2 pt-2 pb-3 space-y-1 bg-white border-t">
+              <a href="#" className="block px-3 py-2 text-base font-medium text-gray-900 hover:text-green-600 hover:bg-green-50 rounded-md transition-colors">Home</a>
+              <a href="#" className="block px-3 py-2 text-base font-medium text-gray-900 hover:text-green-600 hover:bg-green-50 rounded-md transition-colors">Shop</a>
+              <a href="#" className="block px-3 py-2 text-base font-medium text-gray-900 hover:text-green-600 hover:bg-green-50 rounded-md transition-colors">Sports</a>
+              <a href="#" className="block px-3 py-2 text-base font-medium text-gray-900 hover:text-green-600 hover:bg-green-50 rounded-md transition-colors">About us</a>
+              <a href="#" className="block px-3 py-2 text-base font-medium text-gray-900 hover:text-green-600 hover:bg-green-50 rounded-md transition-colors">FAQ</a>
+            </div>
+          </div>
+        )}
       </div>
     </nav>
   );
-}
+};
+
+export default Navbar;
