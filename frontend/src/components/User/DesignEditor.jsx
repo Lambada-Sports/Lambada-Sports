@@ -677,7 +677,7 @@ export default function DesignEditor({ userImage, setSelectedDesignURL }) {
                   : "bg-green-600 text-white hover:bg-green-700"
               }`}
             >
-              {isSaving ? "Saving..." : "Save Design"}
+              Save Design
             </button>
           </>
         ) : (
@@ -694,7 +694,6 @@ export default function DesignEditor({ userImage, setSelectedDesignURL }) {
           </button>
         )}
       </div>
-
       <div className="flex items-center gap-2 mt-4">
         <label htmlFor="opacitySlider">Opacity</label>
         <input
