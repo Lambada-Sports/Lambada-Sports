@@ -285,8 +285,8 @@ const Products = () => {
                       </div>
                       <div className="flex items-center justify-between mb-2">
                         <p>
-                          <span className="font-medium">Type:</span>{" "}
-                          {product.type}
+                          <span className="font-medium">Category:</span>{" "}
+                          {product.category}
                         </p>
                         <span
                           className={`px-2 py-1 text-xs rounded-full ${getStatusColor(
@@ -334,7 +334,7 @@ const Products = () => {
                           Price
                         </th>
                         <th className="text-left py-3 px-4 font-medium text-gray-700">
-                          Type
+                          Category
                         </th>
                         <th className="text-left py-3 px-4 font-medium text-gray-700">
                           Sport
@@ -387,7 +387,7 @@ const Products = () => {
                             {product.price}
                           </td>
                           <td className="py-3 px-4 text-gray-600">
-                            {product.type}
+                            {product.category}
                           </td>
                           <td className="py-3 px-4 text-gray-600">
                             {product.sport}

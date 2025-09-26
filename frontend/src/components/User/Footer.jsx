@@ -1,4 +1,4 @@
-import React from 'react';
+import React from "react";
 
 const Footer = () => {
   return (
@@ -9,26 +9,58 @@ const Footer = () => {
           <div className="col-span-1 md:col-span-2">
             <div className="flex items-center mb-4">
               <div className="w-12 h-12 bg-gradient-to-br from-green-500 to-green-700 rounded-lg flex items-center justify-center">
-                <span className="text-white font-bold text-xl">AF</span>
+                <img src="fit.jpg" />
               </div>
               <span className="ml-3 text-2xl font-bold">Athletic Fit</span>
             </div>
             <p className="text-gray-400 mb-4 max-w-md">
-              Athletic Fit crafts premium custom teamwear, Any Sport | Any Design | Any Size built to perform and made to last.
-              From first mockup to final stitch, we deliver precise personalization, pro-grade materials, and reliable turnaround for
-              clubs, schools, leagues, and corporates.
+              Athletic Fit crafts premium custom teamwear, Any Sport | Any
+              Design | Any Size built to perform and made to last. From first
+              mockup to final stitch, we deliver precise personalization,
+              pro-grade materials, and reliable turnaround for clubs, schools,
+              leagues, and corporates.
             </p>
-            <p className="text-green-400 font-semibold">Beyond the Boundaries.</p>
+            <p className="text-green-400 font-semibold">
+              Beyond the Boundaries.
+            </p>
           </div>
 
           {/* Quick Links */}
           <div>
             <h3 className="text-lg font-semibold mb-4">Quick Links</h3>
             <ul className="space-y-2">
-              <li><a href="#" className="text-gray-400 hover:text-green-400 transition-colors">Reviews</a></li>
-              <li><a href="#" className="text-gray-400 hover:text-green-400 transition-colors">About Us</a></li>
-              <li><a href="#" className="text-gray-400 hover:text-green-400 transition-colors">Contact Us</a></li>
-              <li><a href="#" className="text-gray-400 hover:text-green-400 transition-colors">FAQ</a></li>
+              <li>
+                <a
+                  href="#"
+                  className="text-gray-400 hover:text-green-400 transition-colors"
+                >
+                  Reviews
+                </a>
+              </li>
+              <li>
+                <a
+                  href="#"
+                  className="text-gray-400 hover:text-green-400 transition-colors"
+                >
+                  About Us
+                </a>
+              </li>
+              <li>
+                <a
+                  href="#"
+                  className="text-gray-400 hover:text-green-400 transition-colors"
+                >
+                  Contact Us
+                </a>
+              </li>
+              <li>
+                <a
+                  href="#"
+                  className="text-gray-400 hover:text-green-400 transition-colors"
+                >
+                  FAQ
+                </a>
+              </li>
             </ul>
           </div>
 
@@ -36,8 +68,22 @@ const Footer = () => {
           <div>
             <h3 className="text-lg font-semibold mb-4">Legal</h3>
             <ul className="space-y-2">
-              <li><a href="#" className="text-gray-400 hover:text-green-400 transition-colors">Privacy Policy</a></li>
-              <li><a href="#" className="text-gray-400 hover:text-green-400 transition-colors">Terms & Conditions</a></li>
+              <li>
+                <a
+                  href="#"
+                  className="text-gray-400 hover:text-green-400 transition-colors"
+                >
+                  Privacy Policy
+                </a>
+              </li>
+              <li>
+                <a
+                  href="#"
+                  className="text-gray-400 hover:text-green-400 transition-colors"
+                >
+                  Terms & Conditions
+                </a>
+              </li>
             </ul>
           </div>
         </div>
@@ -45,7 +91,8 @@ const Footer = () => {
         {/* Bottom Section */}
         <div className="border-t border-gray-800 mt-8 pt-8 text-center">
           <p className="text-gray-400">
-            © 2025 Athletic Fit (Pvt) Ltd | Designed by Quantum Leap Solution (Pvt) Ltd
+            © 2025 Athletic Fit (Pvt) Ltd | Designed by Quantum Leap Solution
+            (Pvt) Ltd
           </p>
         </div>
       </div>

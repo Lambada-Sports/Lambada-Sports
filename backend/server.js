@@ -6,6 +6,7 @@ const adminOrderRoutes = require("./routes/adminOrderRoutes");
 const manufacturerOrderRoutes = require("./routes/manufacturerOrderRoutes");
 const customerRoutes = require("./routes/customerRoutes");
 const orderRoutes = require("./routes/orderRoutes");
+const authRoutes = require("./routes/authRoutes");
 
 const app = express();
 
@@ -14,6 +15,7 @@ app.use(express.json({ limit: "50mb" }));
 app.use(express.urlencoded({ limit: "50mb", extended: true }));
 
 // Routes
+app.use("/api", authRoutes);
 app.use("/api/admin", adminProductRoutes);
 app.use("/api/admin", adminOrderRoutes);
 app.use("/api/manufacturer", manufacturerOrderRoutes);
