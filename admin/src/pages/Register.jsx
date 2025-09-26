@@ -1,10 +1,21 @@
 import React, { useState } from "react";
-import { Eye, EyeOff, Mail, Lock, User, ArrowRight } from "lucide-react";
+import {
+  Eye,
+  EyeOff,
+  Mail,
+  Lock,
+  User,
+  Phone,
+  MapPin,
+  ArrowRight,
+} from "lucide-react";
 import { Link } from "react-router-dom";
 
 const Register = () => {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
+  const [phone, setPhone] = useState("");
+  const [address, setAddress] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -33,8 +44,7 @@ const Register = () => {
       </div>
 
       <div className="relative w-full max-w-md mx-auto mt-5">
-        <div className="bg-white rounded-3xl shadow-2xl overflow-hidden min-h-[480px]">
-          {/* Register Form */}
+        <div className="bg-white rounded-3xl shadow-2xl overflow-hidden min-h-[520px]">
           <div className="p-5 lg:p-8 flex flex-col justify-center">
             <div className="max-w-xs mx-auto w-full">
               {/* Logo and Header */}
@@ -91,6 +101,54 @@ const Register = () => {
                       onChange={(e) => setEmail(e.target.value)}
                       className="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors bg-gray-50 focus:bg-white"
                       placeholder="Enter your email"
+                      required
+                    />
+                  </div>
+                </div>
+
+                {/* Phone Field */}
+                <div>
+                  <label
+                    htmlFor="phone"
+                    className="block text-sm font-medium text-gray-700 mb-2"
+                  >
+                    Phone Number
+                  </label>
+                  <div className="relative">
+                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                      <Phone className="h-5 w-5 text-gray-400" />
+                    </div>
+                    <input
+                      id="phone"
+                      type="tel"
+                      value={phone}
+                      onChange={(e) => setPhone(e.target.value)}
+                      className="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors bg-gray-50 focus:bg-white"
+                      placeholder="Enter your phone number"
+                      required
+                    />
+                  </div>
+                </div>
+
+                {/* Address Field */}
+                <div>
+                  <label
+                    htmlFor="address"
+                    className="block text-sm font-medium text-gray-700 mb-2"
+                  >
+                    Address
+                  </label>
+                  <div className="relative">
+                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                      <MapPin className="h-5 w-5 text-gray-400" />
+                    </div>
+                    <input
+                      id="address"
+                      type="text"
+                      value={address}
+                      onChange={(e) => setAddress(e.target.value)}
+                      className="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors bg-gray-50 focus:bg-white"
+                      placeholder="Enter your address"
                       required
                     />
                   </div>

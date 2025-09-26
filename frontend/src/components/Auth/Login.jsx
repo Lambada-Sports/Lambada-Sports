@@ -35,7 +35,7 @@ const Login = () => {
               <div className="text-center mb-4">
                 <div className="w-20 h-20 flex items-center justify-center mx-auto ">
                   <img
-                    src="/logo.png"
+                    src="/fit.jpg"
                     alt="Logo"
                     className="w-50 h-50 object-contain"
                   />

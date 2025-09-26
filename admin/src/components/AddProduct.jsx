@@ -1,18 +1,20 @@
 import { useEffect, useState } from "react";
 
-const Types = [
-  { description: "Men" },
-  { description: "Women" },
-  { description: "Kids" },
-  { description: "Unisex" },
+const Categories = [
+  { description: "Jerseys" },
+  { description: "Tracksuits" },
+  { description: "Bottoms and Shorts" },
+  { description: "Lifestyle Kits" },
+  { description: "Hoodies" },
+  { description: "Accessories" },
 ];
 
 const AddProduct = ({ onClose, onSave }) => {
-  const [types, setTypes] = useState([]);
+  const [categories, setCategories] = useState([]);
 
   useEffect(() => {
     setTimeout(() => {
-      setTypes(Types);
+      setCategories(Categories);
     }, 300); // mock delay
   }, []);
 
@@ -24,7 +26,7 @@ const AddProduct = ({ onClose, onSave }) => {
       name: form.name.value,
       description: form.description.value,
       price: parseFloat(form.price.value),
-      type: form.category.value,
+      category: form.category.value, // changed here
       sport: form.sport.value,
       status: form.status.value,
       stock: parseInt(form.stock.value),
@@ -124,16 +126,18 @@ const AddProduct = ({ onClose, onSave }) => {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                Type
+                Category
               </label>
               <select
                 name="category"
                 required
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               >
-                <option value="">Select Type</option>
-                {types.map((type) => (
-                  <option>{type.description}</option>
+                <option value="">Select Category</option>
+                {categories.map((cat, idx) => (
+                  <option key={idx} value={cat.description}>
+                    {cat.description}
+                  </option>
                 ))}
               </select>
             </div>

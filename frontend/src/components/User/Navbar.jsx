@@ -1,5 +1,12 @@
-import React, { useState } from 'react';
-import { ChevronDown, Menu, X, Search, ShoppingCart } from 'lucide-react';
+import { useState } from "react";
+import {
+  ChevronDown,
+  Menu,
+  X,
+  Search,
+  ShoppingCart,
+  LogIn,
+} from "lucide-react";
 
 const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -7,23 +14,23 @@ const Navbar = () => {
   const [sportsDropdown, setSportsDropdown] = useState(false);
 
   const shopItems = [
-    'Jerseys',
-    'Tracksuits', 
-    'Bottom & Shorts',
-    'Lifestyle Kits',
-    'Bestsellers',
-    'Hoodies and Tees',
-    'Accessories',
-    'Custom Jersey'
+    "Jerseys",
+    "Tracksuits",
+    "Bottom & Shorts",
+    "Lifestyle Kits",
+    "Bestsellers",
+    "Hoodies",
+    "Accessories",
+    "Custom Jersey",
   ];
 
   const sportsItems = [
-    'Cricket',
-    'Football', 
-    'Rugby',
-    'Volleyball',
-    'Basketball',
-    'Hockey'
+    "Cricket",
+    "Football",
+    "Rugby",
+    "Volleyball",
+    "Basketball",
+    "Hockey",
   ];
 
   return (
@@ -32,10 +39,13 @@ const Navbar = () => {
         <div className="flex justify-between items-center h-16">
           {/* Left Menu Items */}
           <div className="hidden md:flex items-center space-x-8">
-            <a href="#" className="text-gray-900 hover:text-green-600 px-3 py-2 text-lg font-medium transition-colors">
+            <a
+              href="/"
+              className="text-gray-900 hover:text-green-600 px-3 py-2 text-lg font-medium transition-colors"
+            >
               Home
             </a>
-            
+
             {/* Shop Dropdown */}
             <div className="relative">
               <button
@@ -46,10 +56,16 @@ const Navbar = () => {
               </button>
               {shopDropdown && (
                 <div className="absolute top-full left-0 mt-1 w-48 bg-white shadow-lg rounded-md border border-gray-200 z-50">
+                  <a
+                    href="/products"
+                    className="block px-4 py-2 text-sm text-gray-700 hover:bg-green-50 hover:text-green-600 transition-colors font-semibold border-b border-gray-100"
+                  >
+                    All Products
+                  </a>
                   {shopItems.map((item) => (
                     <a
                       key={item}
-                      href="#"
+                      href={`/products?category=${encodeURIComponent(item)}`}
                       className="block px-4 py-2 text-sm text-gray-700 hover:bg-green-50 hover:text-green-600 transition-colors"
                     >
                       {item}
@@ -58,7 +74,7 @@ const Navbar = () => {
                 </div>
               )}
             </div>
-            
+
             {/* Sports Dropdown */}
             <div className="relative">
               <button
@@ -69,10 +85,16 @@ const Navbar = () => {
               </button>
               {sportsDropdown && (
                 <div className="absolute top-full left-0 mt-1 w-48 bg-white shadow-lg rounded-md border border-gray-200 z-50">
+                  <a
+                    href="/sports"
+                    className="block px-4 py-2 text-sm text-gray-700 hover:bg-green-50 hover:text-green-600 transition-colors font-semibold border-b border-gray-100"
+                  >
+                    All Sports
+                  </a>
                   {sportsItems.map((sport) => (
                     <a
                       key={sport}
-                      href="#"
+                      href={`/sports?sport=${encodeURIComponent(sport)}`}
                       className="block px-4 py-2 text-sm text-gray-700 hover:bg-green-50 hover:text-green-600 transition-colors"
                     >
                       {sport}
@@ -88,29 +110,43 @@ const Navbar = () => {
             <div className="flex-shrink-0 flex items-center">
               {/* Logo placeholder - you can replace with actual logo */}
               <div className="w-12 h-12 bg-gradient-to-br from-green-500 to-green-700 rounded-lg flex items-center justify-center">
-                <span className="text-white font-bold text-xl">AF</span>
+                <img src="fit.jpg" />
               </div>
-              <span className="ml-2 text-xl font-bold text-gray-900">ATHLETIC FIT</span>
+              <span className="ml-2 text-xl font-bold text-gray-900">
+                ATHLETIC FIT
+              </span>
             </div>
           </div>
 
           {/* Right Menu Items */}
           <div className="hidden md:flex items-center space-x-8">
-            <a href="#" className="text-gray-900 hover:text-green-600 px-3 py-2 text-lg font-medium transition-colors">
+            <a
+              href="/about"
+              className="text-gray-900 hover:text-green-600 px-3 py-2 text-lg font-medium transition-colors"
+            >
               About us
             </a>
-            <a href="#" className="text-gray-900 hover:text-green-600 px-3 py-2 text-lg font-medium transition-colors">
+            <a
+              href="/faq"
+              className="text-gray-900 hover:text-green-600 px-3 py-2 text-lg font-medium transition-colors"
+            >
               Faq
             </a>
-            
             {/* Search Icon */}
             <button className="text-gray-900 hover:text-green-600 p-2 transition-colors">
               <Search className="h-6 w-6" />
             </button>
-            
             {/* Cart Icon */}
             <button className="text-gray-900 hover:text-green-600 p-2 transition-colors">
               <ShoppingCart className="h-6 w-6" />
+            </button>
+
+            {/* Login Icon */}
+            <button
+              className="text-gray-900 hover:text-green-600 p-2 transition-colors"
+              onClick={() => (window.location.href = "/login")}
+            >
+              <LogIn className="h-6 w-6" />
             </button>
           </div>
 
@@ -120,7 +156,11 @@ const Navbar = () => {
               onClick={() => setIsOpen(!isOpen)}
               className="text-gray-900 hover:text-green-600 p-2"
             >
-              {isOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
+              {isOpen ? (
+                <X className="h-6 w-6" />
+              ) : (
+                <Menu className="h-6 w-6" />
+              )}
             </button>
           </div>
         </div>
@@ -129,11 +169,36 @@ const Navbar = () => {
         {isOpen && (
           <div className="md:hidden">
             <div className="px-2 pt-2 pb-3 space-y-1 bg-white border-t">
-              <a href="#" className="block px-3 py-2 text-base font-medium text-gray-900 hover:text-green-600 hover:bg-green-50 rounded-md transition-colors">Home</a>
-              <a href="#" className="block px-3 py-2 text-base font-medium text-gray-900 hover:text-green-600 hover:bg-green-50 rounded-md transition-colors">Shop</a>
-              <a href="#" className="block px-3 py-2 text-base font-medium text-gray-900 hover:text-green-600 hover:bg-green-50 rounded-md transition-colors">Sports</a>
-              <a href="#" className="block px-3 py-2 text-base font-medium text-gray-900 hover:text-green-600 hover:bg-green-50 rounded-md transition-colors">About us</a>
-              <a href="#" className="block px-3 py-2 text-base font-medium text-gray-900 hover:text-green-600 hover:bg-green-50 rounded-md transition-colors">FAQ</a>
+              <a
+                href="/"
+                className="block px-3 py-2 text-base font-medium text-gray-900 hover:text-green-600 hover:bg-green-50 rounded-md transition-colors"
+              >
+                Home
+              </a>
+              <a
+                href="/products"
+                className="block px-3 py-2 text-base font-medium text-gray-900 hover:text-green-600 hover:bg-green-50 rounded-md transition-colors"
+              >
+                Shop
+              </a>
+              <a
+                href="/sports"
+                className="block px-3 py-2 text-base font-medium text-gray-900 hover:text-green-600 hover:bg-green-50 rounded-md transition-colors"
+              >
+                Sports
+              </a>
+              <a
+                href="/about"
+                className="block px-3 py-2 text-base font-medium text-gray-900 hover:text-green-600 hover:bg-green-50 rounded-md transition-colors"
+              >
+                About us
+              </a>
+              <a
+                href="/faq"
+                className="block px-3 py-2 text-base font-medium text-gray-900 hover:text-green-600 hover:bg-green-50 rounded-md transition-colors"
+              >
+                FAQ
+              </a>
             </div>
           </div>
         )}

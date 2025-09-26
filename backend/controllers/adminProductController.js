@@ -31,7 +31,7 @@ exports.addProduct = async (req, res) => {
     name,
     description,
     price,
-    type,
+    category,
     sport,
     status = "active",
     stock = 0,
@@ -41,14 +41,14 @@ exports.addProduct = async (req, res) => {
 
   try {
     const product = await pool.query(
-      `INSERT INTO product (name, description, price, type, sport, status, stock, min_stock_level, max_stock_level)
+      `INSERT INTO product (name, description, price, category, sport, status, stock, min_stock_level, max_stock_level)
        VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)
        RETURNING *`,
       [
         name,
         description,
         price,
-        type,
+        category,
         sport,
         status,
         stock,
@@ -68,7 +68,7 @@ exports.updateProduct = async (req, res) => {
     name,
     description,
     price,
-    type,
+    category,
     sport,
     status,
     stock,
@@ -79,14 +79,14 @@ exports.updateProduct = async (req, res) => {
   try {
     const result = await pool.query(
       `UPDATE product SET
-       name=$1, description=$2, price=$3, type=$4, sport=$5, status=$6,
+       name=$1, description=$2, price=$3, category=$4, sport=$5, status=$6,
        stock=$7, min_stock_level=$8, max_stock_level=$9
        WHERE id=$10 RETURNING *`,
       [
         name,
         description,
         price,
-        type,
+        category,
         sport,
         status,
         stock,

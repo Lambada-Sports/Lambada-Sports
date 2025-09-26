@@ -11,9 +11,37 @@ const Login = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setIsLoading(true);
-    // Simulate API call
-    await new Promise((resolve) => setTimeout(resolve, 2000));
-    setIsLoading(false);
+
+    try {
+      const response = await fetch("http://localhost:5000/api/admin/login", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ email, password }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        alert(data.error || "Login failed");
+        setIsLoading(false);
+        return;
+      }
+
+      // Save token to localStorage
+      localStorage.setItem("adminToken", data.token);
+
+      localStorage.setItem("adminUser", JSON.stringify(data.user));
+
+      // Redirect to admin dashboard
+      window.location.href = "/admin";
+    } catch (err) {
+      console.error("Login error:", err);
+      alert("Something went wrong. Please try again.");
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -120,19 +148,6 @@ const Login = () => {
                       </>
                     )}
                   </button>
-                </div>
-
-                {/* Register Link */}
-                <div className="text-center">
-                  <p className="text-sm text-gray-600 mt-4">
-                    Don’t have an account?{" "}
-                    <Link
-                      to="/register"
-                      className="text-blue-600 font-medium hover:underline"
-                    >
-                      Register
-                    </Link>
-                  </p>
                 </div>
               </div>
             </div>
