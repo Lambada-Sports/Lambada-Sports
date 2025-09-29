@@ -5,7 +5,7 @@ import ProductsPage from "./components/User/ProductsPage";
 import SportsPage from "./components/User/SportsPage";
 import AboutPage from "./components/User/AboutPage";
 import SelectSportPage from "./components/User/SelectSportPage";
-import CustomizePage from "./components/User/CustomizePage";
+import CustomDesignPage from './components/User/CustomDesignPage';
 import OrderFormPage from "./components/User/OrderFormPage";
 import CartPage from "./components/User/CartPage";
 import CheckoutPage from "./components/User/CheckoutPage";
@@ -28,7 +28,7 @@ export default function App() {
         <Route path="/register" element={<Register />} />
         <Route path="/forgot-password" element={<ForgotPassword />} />
         <Route path="/select-sport" element={<SelectSportPage />} />
-        <Route path="/customize/:sport/:fit" element={<CustomizePage />} />
+        <Route path="/custom-design" element={<CustomDesignPage />} />
         <Route path="/design-editor" element={<Customisation />} />
         <Route path="/order-form" element={<OrderFormPage />} />
         <Route path="/cart" element={<CartPage />} />
