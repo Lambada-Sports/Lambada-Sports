@@ -1,7 +1,110 @@
+import { useState, useEffect } from "react";
 import Navbar from "./Navbar";
 import Footer from "./Footer";
 
 const HomePage = () => {
+  const [products, setProducts] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  // Fetch products from API
+  useEffect(() => {
+    const fetchProducts = async () => {
+      try {
+        const response = await fetch(
+          "http://localhost:5000/api/customer/products"
+        );
+        if (response.ok) {
+          const data = await response.json();
+          console.log("Products fetched:", data);
+          setProducts(data);
+          if (data.length === 0) {
+            console.log("No products in database, will show fallback");
+          }
+        } else {
+          console.error("Failed to fetch products");
+        }
+      } catch (error) {
+        console.error("Error fetching products:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchProducts();
+  }, []);
+
+  // Use API data if available, otherwise use fallback data
+  const displayProducts = products.length > 0 ? products : [];
+
+  // Get latest products (
+  const latestProducts = displayProducts.slice(0, 4);
+
+  // Get bestsellers
+  const bestSellers = displayProducts
+    .filter((product) => product.isBestseller)
+    .slice(0, 4);
+  const bestSellersDisplay =
+    bestSellers.length > 0 ? bestSellers : displayProducts.slice(0, 4);
+
+  // Product Card Component
+  const ProductCard = ({ product, showBadge = false }) => (
+    <div
+      className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-all duration-300 transform hover:scale-105 cursor-pointer"
+      onClick={() => {
+        window.location.href = `/products/${product.id}`;
+      }}
+    >
+      {showBadge && product.isBestseller && (
+        <div className="bg-green-500 text-white text-xs font-bold px-2 py-1 absolute z-10 rounded-br-lg">
+          BESTSELLER
+        </div>
+      )}
+      <div className="relative">
+        <img
+          src={
+            product.image
+              ? product.image.startsWith("/uploads")
+                ? `http://localhost:5000${product.image}`
+                : product.image
+              : "/assets/image.png"
+          }
+          alt={product.name}
+          className="w-full h-48 object-cover"
+          onError={(e) => {
+            e.target.src = "/assets/image.png";
+          }}
+        />
+        {/* Category Badge */}
+        <div className="absolute top-2 left-2 bg-black/70 text-white text-xs px-2 py-1 rounded">
+          {product.category}
+        </div>
+      </div>
+      <div className="p-4 text-center">
+        <h3 className="font-semibold text-gray-800 mb-2 line-clamp-2 hover:text-green-600 transition-colors">
+          {product.name}
+        </h3>
+        <p className="text-sm text-gray-600 mb-3 line-clamp-2">
+          {product.description}
+        </p>
+        <div className="flex items-center justify-between">
+          <p className="text-green-600 font-bold text-xl">
+            ${parseFloat(product.price).toFixed(2)}
+          </p>
+          <button
+            className="bg-green-500 text-white px-4 py-2 rounded-lg hover:bg-green-600 transition-colors font-medium text-sm shadow-md hover:shadow-lg"
+            onClick={(e) => {
+              e.stopPropagation();
+
+              alert(`Added ${product.name} to cart!`);
+            }}
+          >
+            Add to Cart
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+
   return (
     <>
       <Navbar />
@@ -120,23 +223,37 @@ const HomePage = () => {
             </p>
           </div>
 
-          {/* Products will be loaded from backend - placeholder for now */}
+          {/* Latest Products */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-            {/* Product placeholders - these will be populated from backend */}
-            {[1, 2, 3, 4].map((item) => (
-              <div
-                key={item}
-                className="bg-gray-100 rounded-lg p-8 text-center"
-              >
-                <div className="h-48 bg-gray-200 rounded-lg mb-4 flex items-center justify-center">
-                  <span className="text-gray-500 text-sm">Product Image</span>
-                </div>
-                <h3 className="font-semibold text-gray-800 mb-2">
-                  Product Name
-                </h3>
-                <p className="text-green-600 font-bold">$XX.XX</p>
-              </div>
-            ))}
+            {loading
+              ? // Loading skeleton
+                [1, 2, 3, 4].map((item) => (
+                  <div
+                    key={item}
+                    className="bg-gray-100 rounded-lg p-8 text-center animate-pulse"
+                  >
+                    <div className="h-48 bg-gray-200 rounded-lg mb-4"></div>
+                    <div className="h-4 bg-gray-200 rounded mb-2"></div>
+                    <div className="h-4 bg-gray-200 rounded w-3/4 mx-auto"></div>
+                  </div>
+                ))
+              : latestProducts.map((product) => (
+                  <ProductCard
+                    key={product.id}
+                    product={product}
+                    showBadge={false}
+                  />
+                ))}
+          </div>
+
+          {/* View All Products Button */}
+          <div className="text-center mt-12">
+            <button
+              onClick={() => (window.location.href = "/products")}
+              className="bg-green-500 text-white px-8 py-3 rounded-lg hover:bg-green-600 transition-colors font-semibold text-lg shadow-lg hover:shadow-xl transform hover:scale-105 duration-300"
+            >
+              View All Products →
+            </button>
           </div>
         </div>
       </section>
@@ -185,25 +302,40 @@ const HomePage = () => {
             </p>
           </div>
 
-          {/* Products will be loaded from backend - placeholder for now */}
+          {/* Best Sellers Products */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-            {/* Product placeholders - these will be populated from backend */}
-            {[1, 2, 3, 4].map((item) => (
-              <div
-                key={item}
-                className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow duration-300"
-              >
-                <div className="h-48 bg-gray-200 flex items-center justify-center">
-                  <span className="text-gray-500 text-sm">Product Image</span>
-                </div>
-                <div className="p-4 text-center">
-                  <h3 className="font-semibold text-gray-800 mb-2">
-                    Product Name
-                  </h3>
-                  <p className="text-green-600 font-bold">$XX.XX</p>
-                </div>
-              </div>
-            ))}
+            {loading
+              ? [1, 2, 3, 4].map((item) => (
+                  <div
+                    key={item}
+                    className="bg-white rounded-lg shadow-md overflow-hidden animate-pulse"
+                  >
+                    <div className="h-48 bg-gray-200"></div>
+                    <div className="p-4 text-center">
+                      <div className="h-4 bg-gray-200 rounded mb-2"></div>
+                      <div className="h-4 bg-gray-200 rounded w-3/4 mx-auto"></div>
+                    </div>
+                  </div>
+                ))
+              : bestSellersDisplay.map((product) => (
+                  <ProductCard
+                    key={product.id}
+                    product={product}
+                    showBadge={true}
+                  />
+                ))}
+          </div>
+
+          {/* View All Products Button */}
+          <div className="text-center mt-12">
+            <button
+              onClick={() =>
+                (window.location.href = "/products?category=Bestsellers")
+              }
+              className="bg-green-500 text-white px-8 py-3 rounded-lg hover:bg-green-600 transition-colors font-semibold text-lg shadow-lg hover:shadow-xl transform hover:scale-105 duration-300"
+            >
+              View All Best Sellers →
+            </button>
           </div>
         </div>
       </section>
@@ -214,7 +346,7 @@ const HomePage = () => {
         <div
           className="absolute inset-0 bg-cover bg-center bg-no-repeat"
           style={{
-            backgroundImage: 'url("/assets/custom-jerseys-bg.png")', // You can change this to your desired background
+            backgroundImage: 'url("/assets/custom-jerseys-bg.png")',
           }}
         ></div>
 
@@ -238,7 +370,7 @@ const HomePage = () => {
       </section>
 
       {/* Final Best Sellers Section with League Logos */}
-      <section className="py-16 bg-white">
+      {/*<section className="py-16 bg-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-12">
             <h2 className="text-4xl md:text-5xl font-bold text-gray-900 mb-4">
@@ -249,9 +381,9 @@ const HomePage = () => {
             </p>
           </div>
 
-          {/* League Logos Section */}
+          
           <div className="flex flex-wrap justify-center items-center gap-8 mb-12">
-            {/* Placeholder for league logos - you'll add actual logo images */}
+         
             {[1, 2, 3, 4, 5, 6].map((logo) => (
               <div
                 key={logo}
@@ -262,7 +394,7 @@ const HomePage = () => {
             ))}
           </div>
         </div>
-      </section>
+      </section>*/}
 
       {/* Newsletter Section */}
       <section className="bg-gray-100 py-12">

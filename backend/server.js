@@ -13,16 +13,13 @@ const app = express();
 app.use(cors());
 app.use(express.json({ limit: "50mb" }));
 app.use(express.urlencoded({ limit: "50mb", extended: true }));
+app.use("/uploads", express.static("uploads"));
 
 // Routes
 app.use("/api", authRoutes);
 app.use("/api/admin", adminProductRoutes);
 app.use("/api/admin", adminOrderRoutes);
 app.use("/api/manufacturer", manufacturerOrderRoutes);
-app.get(
-  "/api/products",
-  require("./controllers/customerController").getProducts
-);
 app.use("/api/order", orderRoutes);
 app.use("/api/customer", customerRoutes);
 

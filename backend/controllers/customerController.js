@@ -15,7 +15,7 @@ exports.getProducts = async (req, res) => {
 // customer adding designs
 exports.addDesign = async (req, res) => {
   const { product_id, design_data } = req.body;
-  const customer_id = req.customerId;
+  const customer_id = req.user.id;
 
   try {
     const result = await pool.query(
@@ -32,7 +32,7 @@ exports.addDesign = async (req, res) => {
 
 // customer viewing designs
 exports.getDesign = async (req, res) => {
-  const customer_id = req.customerId;
+  const customer_id = req.user.id;
   try {
     const result = await pool.query(
       "SELECT * FROM design WHERE customer_id = $1",
@@ -47,86 +47,68 @@ exports.getDesign = async (req, res) => {
 // view cart items
 exports.getCart = async (req, res) => {
   try {
-    const customer_id = req.customerId;
-
-    const cartResult = await pool.query(
-      "SELECT id FROM cart WHERE customer_id = $1",
-      [customer_id]
-    );
-
-    if (cartResult.rows.length === 0) {
-      console.log(" No cart found for customer, returning empty array");
-      return res.json([]);
+    const customer_id = req.user?.id;
+    if (!customer_id) {
+      return res.status(401).json({ error: "User not logged in" });
     }
-
-    const cart_id = cartResult.rows[0].id;
 
     const items = await pool.query(
       `
-    SELECT ci.*, p.name, d.design_data
-    FROM cartitem ci
-    JOIN product p ON ci.product_id = p.id
-    LEFT JOIN design d ON ci.design_id = d.id
-    WHERE ci.cart_id = $1
-  `,
-      [cart_id]
+      SELECT
+        ci.id,
+        ci.product_id,          
+        ci.quantity,
+        p.name        AS product_name,
+        p.price       AS product_price,
+        p.description       AS product_description,       
+        (p.price * ci.quantity) AS line_total
+      FROM cartitem ci
+      JOIN product p ON ci.product_id = p.id
+      WHERE ci.customer_id = $1
+      ORDER BY ci.id ASC
+      `,
+      [customer_id]
     );
-    console.log(" Cart items found:", items.rows.length);
-    items.rows.forEach((item, index) => {
-      console.log(`🛒 Item ${index + 1}:`, {
-        id: item.id,
-        name: item.name,
-        design_id: item.design_id,
-        design_data_type: typeof item.design_data,
-        design_data_preview: item.design_data
-          ? typeof item.design_data === "string"
-            ? item.design_data.substring(0, 100) + "..."
-            : Object.keys(item.design_data)
-          : "No design data",
-      });
-    });
-    res.json(items.rows);
+
+    // Normalize numeric types (safer for frontend)
+    const normalized = items.rows.map((r) => ({
+      id: r.id,
+      product_id: r.product_id,
+
+      quantity: Number(r.quantity),
+      description: r.description,
+      name: r.product_name,
+      price: r.product_price !== null ? parseFloat(r.product_price) : 0,
+      image: r.product_image,
+      line_total: r.line_total !== null ? parseFloat(r.line_total) : 0,
+    }));
+
+    res.json(normalized);
   } catch (error) {
-    console.error(" Error in getCart:", error);
-    res.status(500).json({ error: "Failed to fetch cart items" });
-    return;
+    console.error("Error fetching cart:", error);
+    res.status(500).json({ error: "Failed to fetch cart" });
   }
 };
 
-// add items to cart
+// adding to cart
 exports.addToCart = async (req, res) => {
   try {
-    const { product_id, design_id, sizes, quantity, customer_note } = req.body;
-    const customer_id = req.customerId;
+    const { product_id, quantity } = req.body;
+    const customer_id = req.user.id;
 
-    let cart_id;
-    const cartResult = await pool.query(
-      "SELECT id FROM cart WHERE customer_id = $1",
-      [customer_id]
-    );
-    if (cartResult.rows.length === 0) {
-      const newCart = await pool.query(
-        "INSERT INTO cart (customer_id) VALUES ($1) RETURNING id",
-        [customer_id]
-      );
-      cart_id = newCart.rows[0].id;
-    } else {
-      cart_id = cartResult.rows[0].id;
+    if (!customer_id) {
+      return res.status(401).json({ error: "User not logged in" });
     }
 
     const item = await pool.query(
-      `
-    INSERT INTO cartitem (cart_id, product_id, design_id, sizes, quantity, customer_note)
-    VALUES ($1, $2, $3, $4, $5, $6) RETURNING *`,
-      [cart_id, product_id, design_id, sizes, quantity, customer_note]
+      `INSERT INTO cartitem (product_id, quantity, customer_id)
+       VALUES ($1, $2, $3) RETURNING *`,
+      [product_id, quantity, customer_id]
     );
 
     res.status(201).json(item.rows[0]);
   } catch (error) {
-    console.error(" Error adding to cart:", error);
-    res
-      .status(500)
-      .json({ error: "Failed to add to cart", details: error.message });
-    return;
+    console.error("Error adding to cart:", error);
+    res.status(500).json({ error: "Failed to add to cart" });
   }
 };

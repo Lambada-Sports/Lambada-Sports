@@ -67,14 +67,13 @@ const Products = () => {
 
   const handleBulkAction = (action) => {
     console.log(`Bulk ${action} for products:`, selectedProducts);
-    // Implement bulk actions here
+
     setSelectedProducts([]);
     setShowBulkActions(false);
   };
 
   const handleStatusChange = (productId, newStatus) => {
     console.log(`Changing product ${productId} status to ${newStatus}`);
-    // Implement status change logic here
   };
 
   useEffect(() => {
@@ -346,6 +345,9 @@ const Products = () => {
                           Status
                         </th>
                         <th className="text-left py-3 px-4 font-medium text-gray-700">
+                          Image
+                        </th>
+                        <th className="text-left py-3 px-4 font-medium text-gray-700">
                           Actions
                         </th>
                       </tr>
@@ -384,7 +386,7 @@ const Products = () => {
                             {product.description}
                           </td>
                           <td className="py-3 px-4 text-gray-600 font-medium">
-                            {product.price}
+                            Rs.{Number(product.price).toFixed(2)}
                           </td>
                           <td className="py-3 px-4 text-gray-600">
                             {product.category}
@@ -418,9 +420,21 @@ const Products = () => {
                             >
                               <option value="Active">Active</option>
                               <option value="Inactive">Inactive</option>
-                              <option value="Draft">Draft</option>
                               <option value="Out of Stock">Out of Stock</option>
                             </select>
+                          </td>
+                          <td className="py-3 px-4">
+                            {product.image ? (
+                              <img
+                                src={`http://localhost:5000${product.image}`}
+                                alt={product.name}
+                                className="h-12 w-12 object-cover rounded-md border"
+                              />
+                            ) : (
+                              <span className="text-gray-400 text-sm">
+                                No Image
+                              </span>
+                            )}
                           </td>
                           <td className="py-3 px-4">
                             <div className="flex space-x-2">

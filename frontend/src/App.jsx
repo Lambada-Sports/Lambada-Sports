@@ -2,6 +2,7 @@ import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import Customisation from "./components/User/Customisation";
 import HomePage from "./components/User/HomePage";
 import ProductsPage from "./components/User/ProductsPage";
+import ProductDetailsPage from "./components/User/ProductDetailsPage";
 import SportsPage from "./components/User/SportsPage";
 import AboutPage from "./components/User/AboutPage";
 import SelectSportPage from "./components/User/SelectSportPage";
@@ -22,6 +23,7 @@ export default function App() {
       <Routes>
         <Route path="/" element={<HomePage />} />
         <Route path="/products" element={<ProductsPage />} />
+        <Route path="/products/:id" element={<ProductDetailsPage />} />
         <Route path="/sports" element={<SportsPage />} />
         <Route path="/sports/:sport" element={<SportsPage />} />
         <Route path="/login" element={<Login />} />

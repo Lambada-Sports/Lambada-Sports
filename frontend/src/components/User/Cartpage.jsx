@@ -1,68 +1,58 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { useAuth0 } from "@auth0/auth0-react";
 import { Trash2, Plus, Minus, ShoppingBag, ArrowRight } from "lucide-react";
 import Navbar from "./Navbar";
 
 export default function CartPage() {
   const navigate = useNavigate();
-  const { getAccessTokenSilently, isAuthenticated, isLoading } = useAuth0();
+
   const [cartItems, setCartItems] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  // Fetch cart items from API
-  const fetchCartItems = useCallback(async () => {
-    if (!isAuthenticated) {
-      setLoading(false);
-      return;
-    }
-
-    try {
-      const token = await getAccessTokenSilently();
-
-      const response = await fetch("http://localhost:5000/api/customer/cart", {
-        method: "GET",
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
-        },
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        console.log("🛒 Cart items fetched:", data);
-        data.forEach((item, index) => {
-          console.log(`🛒 Cart Item ${index + 1}:`, {
-            id: item.id,
-            name: item.name,
-            design_id: item.design_id,
-            design_data_type: typeof item.design_data,
-            design_data_preview: item.design_data
-              ? typeof item.design_data === "string"
-                ? item.design_data.substring(0, 100) + "..."
-                : `Object with keys: ${Object.keys(item.design_data).join(
-                    ", "
-                  )}`
-              : "No design data",
-          });
-        });
-        setCartItems(data);
-      } else {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-    } catch (error) {
-      console.error(" Error fetching cart:", error);
-    } finally {
-      setLoading(false);
-    }
-  }, [isAuthenticated, getAccessTokenSilently]);
-
-  // Load cart items when component mounts or authentication state changes
+  // Load cart items when component mounts
   useEffect(() => {
-    if (!isLoading) {
-      fetchCartItems();
-    }
-  }, [isLoading, fetchCartItems]);
+    const fetchCartItems = async () => {
+      try {
+        const token = localStorage.getItem("customerToken");
+        if (!token) {
+          console.log("No token found, redirecting to login");
+          navigate("/login");
+          return;
+        }
+
+        const response = await fetch(
+          "http://localhost:5000/api/customer/cart",
+          {
+            method: "GET",
+            headers: {
+              Authorization: `Bearer ${token}`,
+              "Content-Type": "application/json",
+            },
+          }
+        );
+
+        if (response.ok) {
+          const data = await response.json();
+          console.log(" Cart items fetched:", data);
+          data.forEach((item, index) => {
+            console.log(` Cart Item ${index + 1}:`, {
+              id: item.id,
+              name: item.name,
+            });
+          });
+          setCartItems(data);
+        } else {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+      } catch (error) {
+        console.error(" Error fetching cart:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchCartItems();
+  }, [navigate]);
 
   const updateQuantity = (index, newQuantity) => {
     if (newQuantity <= 0) {
@@ -78,14 +68,12 @@ export default function CartPage() {
   const removeItem = (index) => {
     const updatedItems = cartItems.filter((_, i) => i !== index);
     setCartItems(updatedItems);
-    alert("Remove item - API integration pending");
   };
 
   // Calculate total
   const calculateTotal = () => {
     return cartItems.reduce((total, item) => {
-      const price = 1500;
-      return total + price * item.quantity;
+      return total + (item.price || 0) * item.quantity;
     }, 0);
   };
 
@@ -103,7 +91,7 @@ export default function CartPage() {
     });
   };
 
-  if (loading || isLoading) {
+  if (loading) {
     return (
       <>
         <Navbar />
@@ -111,31 +99,6 @@ export default function CartPage() {
           <div className="text-center">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
             <p className="text-gray-600">Loading your cart...</p>
-          </div>
-        </div>
-      </>
-    );
-  }
-
-  if (!isAuthenticated) {
-    return (
-      <>
-        <Navbar />
-        <div className="min-h-screen bg-gray-100 flex items-center justify-center">
-          <div className="bg-white shadow-lg rounded-lg p-12 text-center max-w-md">
-            <ShoppingBag className="h-16 w-16 text-gray-300 mx-auto mb-4" />
-            <h2 className="text-2xl font-semibold text-gray-600 mb-2">
-              Please Log In
-            </h2>
-            <p className="text-gray-500 mb-6">
-              You need to be logged in to view your cart.
-            </p>
-            <button
-              onClick={() => navigate("/login")}
-              className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-semibold transition-colors"
-            >
-              Log In
-            </button>
           </div>
         </div>
       </>
@@ -229,32 +192,28 @@ export default function CartPage() {
                         </div>
                       )}
 
-                      {/* Item Details */}
-                      <div className="flex-1">
+                      <div className="flex-1 flex flex-col items-center text-center">
                         <h3 className="text-xl font-semibold text-gray-800 mb-2">
                           {item.name || "Custom Sports Jersey"}
                         </h3>
 
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm mb-4">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 place-items-center text-sm mb-4">
                           <div>
-                            <span className="font-medium text-gray-600">
-                              Size:
-                            </span>
                             <p className="text-blue-600 font-semibold">
-                              {item.sizes}
+                              {item.description}
                             </p>
                           </div>
-                          <div>
+                          {/*<div>
                             <span className="font-medium text-gray-600">
                               Details:
                             </span>
                             <p className="text-gray-700 text-sm">
                               {item.customer_note}
                             </p>
-                          </div>
+                          </div>*/}
                         </div>
 
-                        <div className="flex items-center justify-between">
+                        <div className="flex items-center justify-center">
                           {/* Quantity Controls */}
                           <div className="flex items-center space-x-3">
                             <span className="font-medium text-gray-600">
@@ -282,25 +241,6 @@ export default function CartPage() {
                               </button>
                             </div>
                           </div>
-
-                          {/* Price and Remove */}
-                          <div className="flex items-center space-x-4">
-                            <div className="text-right">
-                              <p className="text-lg font-bold text-gray-800">
-                                Rs. {(1500 * item.quantity).toLocaleString()}
-                              </p>
-                              <p className="text-sm text-gray-500">
-                                Rs. 1,500 each
-                              </p>
-                            </div>
-                            <button
-                              onClick={() => removeItem(index)}
-                              className="p-2 text-red-500 hover:bg-red-50 rounded-lg transition-colors"
-                              title="Remove from cart"
-                            >
-                              <Trash2 className="h-5 w-5" />
-                            </button>
-                          </div>
                         </div>
                       </div>
                     </div>
@@ -316,27 +256,17 @@ export default function CartPage() {
                       <h3 className="text-2xl font-bold text-gray-800">
                         Total Amount
                       </h3>
-                      <p className="text-gray-600">
-                        {cartItems.reduce(
-                          (sum, item) => sum + item.quantity,
-                          0
-                        )}{" "}
-                        items
-                      </p>
                     </div>
                     <div className="text-right">
                       <p className="text-3xl font-bold text-blue-600">
                         Rs. {calculateTotal().toLocaleString()}
-                      </p>
-                      <p className="text-sm text-gray-500">
-                        Including all taxes
                       </p>
                     </div>
                   </div>
 
                   <div className="flex flex-col sm:flex-row gap-4">
                     <button
-                      onClick={() => navigate("/select-sport")}
+                      onClick={() => navigate("/sports")}
                       className="flex-1 bg-gray-500 hover:bg-gray-600 text-white py-3 px-6 rounded-lg font-semibold transition-colors"
                     >
                       Continue Shopping

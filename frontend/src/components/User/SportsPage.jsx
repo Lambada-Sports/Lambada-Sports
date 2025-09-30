@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { useSearchParams, useParams } from "react-router-dom";
 import Navbar from "./Navbar";
 import Footer from "./Footer";
-import { Filter, Grid, List, Search, Star } from "lucide-react";
+import { Grid, List, Search, Star } from "lucide-react";
 
 const SportsPage = () => {
   const [searchParams] = useSearchParams();
@@ -12,6 +12,35 @@ const SportsPage = () => {
   const [viewMode, setViewMode] = useState("grid");
   const [searchTerm, setSearchTerm] = useState("");
   const [sortBy, setSortBy] = useState("name");
+  const [products, setProducts] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  // Fetch products from API
+  useEffect(() => {
+    const fetchProducts = async () => {
+      try {
+        const response = await fetch(
+          "http://localhost:5000/api/customer/products"
+        );
+        if (response.ok) {
+          const data = await response.json();
+          console.log("Sports Products fetched:", data);
+          setProducts(data);
+          if (data.length === 0) {
+            console.log("No products in database, will show fallback");
+          }
+        } else {
+          console.error("Failed to fetch products");
+        }
+      } catch (error) {
+        console.error("Error fetching products:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchProducts();
+  }, []);
 
   // Handle URL parameters for sport filtering
   useEffect(() => {
@@ -36,237 +65,16 @@ const SportsPage = () => {
     "All",
     "Jerseys",
     "Tracksuits",
-    "Bottom & Shorts",
+    "Bottoms & Shorts",
     "Lifestyle Kits",
     "Hoodies",
     "Accessories",
   ];
 
-  // Sample products data with sport associations
-  const sampleProducts = [
-    // Cricket Products
-    {
-      id: 1,
-      name: "Premium Cricket Jersey",
-      category: "Jerseys",
-      sport: "Cricket",
-      price: 49.99,
-      image: "/assets/cricket.png",
-      rating: 4.5,
-      reviews: 124,
-      description:
-        "Professional grade cricket jersey with moisture-wicking fabric",
-      isBestseller: true,
-    },
-    {
-      id: 2,
-      name: "Cricket Team Tracksuit",
-      category: "Tracksuits",
-      sport: "Cricket",
-      price: 89.99,
-      image: "/assets/cricket.png",
-      rating: 4.6,
-      reviews: 67,
-      description: "Complete cricket tracksuit for training and warm-ups",
-      isBestseller: false,
-    },
-    {
-      id: 3,
-      name: "Cricket Performance Shorts",
-      category: "Bottom & Shorts",
-      sport: "Cricket",
-      price: 29.99,
-      image: "/assets/cricket.png",
-      rating: 4.4,
-      reviews: 89,
-      description: "Lightweight cricket shorts with flexible fabric",
-      isBestseller: true,
-    },
-    {
-      id: 4,
-      name: "Cricket Team Hoodie",
-      category: "Hoodies",
-      sport: "Cricket",
-      price: 64.99,
-      image: "/assets/cricket.png",
-      rating: 4.5,
-      reviews: 45,
-      description: "Comfortable cricket team hoodie for supporters",
-      isBestseller: false,
-    },
-
-    // Football Products
-    {
-      id: 5,
-      name: "Football Team Jersey",
-      category: "Jerseys",
-      sport: "Football",
-      price: 54.99,
-      image: "/assets/football.png",
-      rating: 4.7,
-      reviews: 156,
-      description:
-        "Professional football jersey with advanced fabric technology",
-      isBestseller: true,
-    },
-    {
-      id: 6,
-      name: "Football Training Tracksuit",
-      category: "Tracksuits",
-      sport: "Football",
-      price: 94.99,
-      image: "/assets/football.png",
-      rating: 4.8,
-      reviews: 78,
-      description: "Premium football tracksuit for training sessions",
-      isBestseller: true,
-    },
-    {
-      id: 7,
-      name: "Football Shorts",
-      category: "Bottom & Shorts",
-      sport: "Football",
-      price: 32.99,
-      image: "/assets/football.png",
-      rating: 4.3,
-      reviews: 112,
-      description: "Durable football shorts with moisture management",
-      isBestseller: false,
-    },
-
-    // Basketball Products
-    {
-      id: 8,
-      name: "Basketball Pro Jersey",
-      category: "Jerseys",
-      sport: "Basketball",
-      price: 47.99,
-      image: "/assets/basketball.png",
-      rating: 4.6,
-      reviews: 134,
-      description: "Lightweight basketball jersey for peak performance",
-      isBestseller: true,
-    },
-    {
-      id: 9,
-      name: "Basketball Training Shorts",
-      category: "Bottom & Shorts",
-      sport: "Basketball",
-      price: 34.99,
-      image: "/assets/basketball.png",
-      rating: 4.4,
-      reviews: 98,
-      description: "High-performance basketball shorts with stretch fabric",
-      isBestseller: false,
-    },
-
-    // Rugby Products
-    {
-      id: 10,
-      name: "Rugby Team Jersey",
-      category: "Jerseys",
-      sport: "Rugby",
-      price: 59.99,
-      image: "/assets/rugby.png",
-      rating: 4.8,
-      reviews: 67,
-      description: "Durable rugby jersey built for intense gameplay",
-      isBestseller: true,
-    },
-    {
-      id: 11,
-      name: "Rugby Training Tracksuit",
-      category: "Tracksuits",
-      sport: "Rugby",
-      price: 99.99,
-      image: "/assets/rugby.png",
-      rating: 4.7,
-      reviews: 45,
-      description: "Heavy-duty rugby tracksuit for training",
-      isBestseller: false,
-    },
-
-    // Volleyball Products
-    {
-      id: 12,
-      name: "Volleyball Team Jersey",
-      category: "Jerseys",
-      sport: "Volleyball",
-      price: 44.99,
-      image: "/assets/volleyball.png",
-      rating: 4.5,
-      reviews: 89,
-      description: "Breathable volleyball jersey with quick-dry technology",
-      isBestseller: false,
-    },
-    {
-      id: 13,
-      name: "Volleyball Performance Shorts",
-      category: "Bottom & Shorts",
-      sport: "Volleyball",
-      price: 28.99,
-      image: "/assets/volleyball.png",
-      rating: 4.3,
-      reviews: 76,
-      description: "Flexible volleyball shorts for optimal movement",
-      isBestseller: true,
-    },
-
-    // Hockey Products
-    {
-      id: 14,
-      name: "Hockey Team Jersey",
-      category: "Jerseys",
-      sport: "Hockey",
-      price: 52.99,
-      image: "/assets/hockey.avif",
-      rating: 4.6,
-      reviews: 54,
-      description: "Professional hockey jersey with reinforced design",
-      isBestseller: false,
-    },
-    {
-      id: 15,
-      name: "Hockey Training Tracksuit",
-      category: "Tracksuits",
-      sport: "Hockey",
-      price: 104.99,
-      image: "/assets/hockey.avif",
-      rating: 4.7,
-      reviews: 32,
-      description: "Warm hockey tracksuit for cold weather training",
-      isBestseller: true,
-    },
-
-    // Universal/Multi-Sport Products
-    {
-      id: 16,
-      name: "Sports Water Bottle",
-      category: "Accessories",
-      sport: "All",
-      price: 19.99,
-      image: "/assets/image.png",
-      rating: 4.3,
-      reviews: 267,
-      description: "Insulated water bottle for all sports activities",
-      isBestseller: false,
-    },
-    {
-      id: 17,
-      name: "Universal Sports Bag",
-      category: "Accessories",
-      sport: "All",
-      price: 79.99,
-      image: "/assets/image.png",
-      rating: 4.6,
-      reviews: 145,
-      description: "Durable sports bag suitable for all sports",
-      isBestseller: true,
-    },
-  ];
+  const displayProducts = products.length > 0 ? products : [];
 
   // Filter products based on sport, category, and search term
-  const filteredProducts = sampleProducts.filter((product) => {
+  const filteredProducts = displayProducts.filter((product) => {
     const matchesSport =
       selectedSport === "All" ||
       product.sport === selectedSport ||
@@ -296,7 +104,12 @@ const SportsPage = () => {
   });
 
   const ProductCard = ({ product }) => (
-    <div className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-all duration-300 transform hover:scale-105">
+    <div
+      className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-all duration-300 transform hover:scale-105 cursor-pointer"
+      onClick={() => {
+        window.location.href = `/products/${product.id}`;
+      }}
+    >
       {product.isBestseller && (
         <div className="bg-green-500 text-white text-xs font-bold px-2 py-1 absolute z-10 rounded-br-lg">
           BESTSELLER
@@ -304,9 +117,18 @@ const SportsPage = () => {
       )}
       <div className="relative">
         <img
-          src={product.image}
+          src={
+            product.image
+              ? product.image.startsWith("/uploads")
+                ? `http://localhost:5000${product.image}`
+                : product.image
+              : "/assets/image.png"
+          }
           alt={product.name}
           className="w-full h-48 object-cover"
+          onError={(e) => {
+            e.target.src = "/assets/image.png";
+          }}
         />
         <button className="absolute top-2 right-2 bg-white p-2 rounded-full shadow-md hover:bg-gray-50 transition-colors">
           <svg
@@ -350,7 +172,7 @@ const SportsPage = () => {
         </p>
         <div className="flex items-center justify-between">
           <span className="text-xl font-bold text-green-600">
-            ${product.price}
+            Rs. {product.price}
           </span>
           <button className="bg-green-500 text-white px-4 py-2 rounded-lg hover:bg-green-600 transition-colors font-medium text-sm">
             Add to Cart
@@ -527,7 +349,20 @@ const SportsPage = () => {
                 : "grid-cols-1"
             }`}
           >
-            {sortedProducts.length > 0 ? (
+            {loading ? (
+              // Loading state
+              <div className="col-span-full text-center py-12">
+                <div className="w-16 h-16 bg-green-200 rounded-full flex items-center justify-center mx-auto mb-4 animate-pulse">
+                  <div className="w-8 h-8 bg-green-500 rounded-full animate-bounce"></div>
+                </div>
+                <h3 className="text-xl font-semibold text-gray-600 mb-2">
+                  Loading sports products...
+                </h3>
+                <p className="text-gray-500">
+                  Please wait while we fetch the latest products
+                </p>
+              </div>
+            ) : sortedProducts.length > 0 ? (
               sortedProducts.map((product) => (
                 <ProductCard key={product.id} product={product} />
               ))

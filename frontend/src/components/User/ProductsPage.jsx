@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { useSearchParams } from "react-router-dom";
 import Navbar from "./Navbar";
 import Footer from "./Footer";
-import { Filter, Grid, List, Search, Star } from "lucide-react";
+import { Grid, List, Search, Star } from "lucide-react";
 
 const ProductsPage = () => {
   const [searchParams] = useSearchParams();
@@ -10,6 +10,35 @@ const ProductsPage = () => {
   const [viewMode, setViewMode] = useState("grid");
   const [searchTerm, setSearchTerm] = useState("");
   const [sortBy, setSortBy] = useState("name");
+  const [products, setProducts] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  // Fetch products from API
+  useEffect(() => {
+    const fetchProducts = async () => {
+      try {
+        const response = await fetch(
+          "http://localhost:5000/api/customer/products"
+        );
+        if (response.ok) {
+          const data = await response.json();
+          console.log("Products fetched:", data);
+          setProducts(data);
+          if (data.length === 0) {
+            console.log("No products in database, will show fallback");
+          }
+        } else {
+          console.error("Failed to fetch products");
+        }
+      } catch (error) {
+        console.error("Error fetching products:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchProducts();
+  }, []);
 
   // Handle URL parameters for category filtering
   useEffect(() => {
@@ -19,7 +48,6 @@ const ProductsPage = () => {
     if (categoryParam) {
       setSelectedCategory(categoryParam);
     } else if (sportParam) {
-      // You can handle sport-specific filtering here if needed
       setSelectedCategory("All");
     }
   }, [searchParams]);
@@ -28,163 +56,17 @@ const ProductsPage = () => {
     "All",
     "Jerseys",
     "Tracksuits",
-    "Bottom & Shorts",
+    "Bottoms & Shorts",
     "Lifestyle Kits",
     "Bestsellers",
     "Hoodies",
     "Accessories",
   ];
 
-  // Sample products data
-  const sampleProducts = [
-    // Jerseys
-    {
-      id: 1,
-      name: "Premium Cricket Jersey",
-      category: "Jerseys",
-      price: 49.99,
-      image: "/assets/cricket.png",
-      rating: 4.5,
-      reviews: 124,
-      description:
-        "Professional grade cricket jersey with moisture-wicking fabric",
-      isBestseller: true,
-    },
-    {
-      id: 2,
-      name: "Football Team Jersey",
-      category: "Jerseys",
-      price: 54.99,
-      image: "/assets/football.png",
-      rating: 4.7,
-      reviews: 89,
-      description: "Lightweight football jersey with custom team colors",
-      isBestseller: true,
-    },
-    {
-      id: 3,
-      name: "Basketball Pro Jersey",
-      category: "Jerseys",
-      price: 47.99,
-      image: "/assets/basketball.png",
-      rating: 4.3,
-      reviews: 156,
-      description: "Breathable basketball jersey for peak performance",
-      isBestseller: false,
-    },
-
-    // Tracksuits
-    {
-      id: 4,
-      name: "Elite Training Tracksuit",
-      category: "Tracksuits",
-      price: 89.99,
-      image: "/assets/image.png",
-      rating: 4.6,
-      reviews: 67,
-      description: "Complete tracksuit set for training and warm-ups",
-      isBestseller: true,
-    },
-    {
-      id: 5,
-      name: "Team Presentation Tracksuit",
-      category: "Tracksuits",
-      price: 124.99,
-      image: "/assets/image.png",
-      rating: 4.8,
-      reviews: 43,
-      description: "Professional presentation tracksuit for team events",
-      isBestseller: false,
-    },
-
-    // Bottom & Shorts
-    {
-      id: 6,
-      name: "Athletic Performance Shorts",
-      category: "Bottom & Shorts",
-      price: 29.99,
-      image: "/assets/image.png",
-      rating: 4.4,
-      reviews: 201,
-      description: "Comfortable shorts for all sports activities",
-      isBestseller: true,
-    },
-    {
-      id: 7,
-      name: "Training Track Pants",
-      category: "Bottom & Shorts",
-      price: 39.99,
-      image: "/assets/image.png",
-      rating: 4.2,
-      reviews: 78,
-      description: "Flexible track pants for training sessions",
-      isBestseller: false,
-    },
-
-    // Lifestyle Kits
-    {
-      id: 8,
-      name: "Complete Sports Kit",
-      category: "Lifestyle Kits",
-      price: 149.99,
-      image: "/assets/image.png",
-      rating: 4.9,
-      reviews: 34,
-      description: "Complete sports kit with jersey, shorts, and accessories",
-      isBestseller: true,
-    },
-
-    // Hoodies
-    {
-      id: 9,
-      name: "Team Spirit Hoodie",
-      category: "Hoodies",
-      price: 64.99,
-      image: "/assets/image.png",
-      rating: 4.5,
-      reviews: 92,
-      description: "Warm and comfortable hoodie for team supporters",
-      isBestseller: false,
-    },
-    {
-      id: 10,
-      name: "Athletic Performance Hoodie",
-      category: "Hoodies",
-      price: 69.99,
-      image: "/assets/image.png",
-      rating: 4.7,
-      reviews: 115,
-      description: "Performance hoodie for training and casual wear",
-      isBestseller: true,
-    },
-
-    // Accessories
-    {
-      id: 11,
-      name: "Sports Water Bottle",
-      category: "Accessories",
-      price: 19.99,
-      image: "/assets/image.png",
-      rating: 4.3,
-      reviews: 267,
-      description: "Insulated water bottle for sports activities",
-      isBestseller: false,
-    },
-    {
-      id: 12,
-      name: "Team Sports Bag",
-      category: "Accessories",
-      price: 79.99,
-      image: "/assets/image.png",
-      rating: 4.6,
-      reviews: 58,
-      description: "Durable sports bag for team equipment",
-      isBestseller: true,
-    },
-  ];
+  const displayProducts = products.length > 0 ? products : [];
 
   // Filter products based on category, search term, and bestseller status
-  const filteredProducts = sampleProducts.filter((product) => {
+  const filteredProducts = displayProducts.filter((product) => {
     const matchesCategory =
       selectedCategory === "All" ||
       (selectedCategory === "Bestsellers" && product.isBestseller) ||
@@ -212,7 +94,12 @@ const ProductsPage = () => {
   });
 
   const ProductCard = ({ product }) => (
-    <div className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-all duration-300 transform hover:scale-105">
+    <div
+      className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-all duration-300 transform hover:scale-105 cursor-pointer"
+      onClick={() => {
+        window.location.href = `/products/${product.id}`;
+      }}
+    >
       {product.isBestseller && (
         <div className="bg-green-500 text-white text-xs font-bold px-2 py-1 absolute z-10 rounded-br-lg">
           BESTSELLER
@@ -220,9 +107,18 @@ const ProductsPage = () => {
       )}
       <div className="relative">
         <img
-          src={product.image}
+          src={
+            product.image
+              ? product.image.startsWith("/uploads")
+                ? `http://localhost:5000${product.image}`
+                : product.image
+              : "/assets/image.png"
+          }
           alt={product.name}
           className="w-full h-48 object-cover"
+          onError={(e) => {
+            e.target.src = "/assets/image.png";
+          }}
         />
         <button className="absolute top-2 right-2 bg-white p-2 rounded-full shadow-md hover:bg-gray-50 transition-colors">
           <svg
@@ -260,7 +156,7 @@ const ProductsPage = () => {
         </p>
         <div className="flex items-center justify-between">
           <span className="text-xl font-bold text-green-600">
-            ${product.price}
+            Rs. {product.price}
           </span>
           <button className="bg-green-500 text-white px-4 py-2 rounded-lg hover:bg-green-600 transition-colors font-medium text-sm">
             Add to Cart
@@ -388,7 +284,20 @@ const ProductsPage = () => {
                 : "grid-cols-1"
             }`}
           >
-            {sortedProducts.length > 0 ? (
+            {loading ? (
+              // Loading state
+              <div className="col-span-full text-center py-12">
+                <div className="w-16 h-16 bg-green-200 rounded-full flex items-center justify-center mx-auto mb-4 animate-pulse">
+                  <div className="w-8 h-8 bg-green-500 rounded-full animate-bounce"></div>
+                </div>
+                <h3 className="text-xl font-semibold text-gray-600 mb-2">
+                  Loading products...
+                </h3>
+                <p className="text-gray-500">
+                  Please wait while we fetch the latest products
+                </p>
+              </div>
+            ) : sortedProducts.length > 0 ? (
               sortedProducts.map((product) => (
                 <ProductCard key={product.id} product={product} />
               ))

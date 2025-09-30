@@ -35,54 +35,36 @@ exports.addProduct = async (req, res) => {
     sport,
     status = "active",
     stock = 0,
-    min_stock_level = 0,
-    max_stock_level = 0,
   } = req.body;
+  const image = req.file ? `/uploads/${req.file.filename}` : null;
 
   try {
     const product = await pool.query(
-      `INSERT INTO product (name, description, price, category, sport, status, stock, min_stock_level, max_stock_level)
-       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)
+      `INSERT INTO product (name, description, price, category, sport, status, stock, image)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8)
        RETURNING *`,
-      [
-        name,
-        description,
-        price,
-        category,
-        sport,
-        status,
-        stock,
-        min_stock_level,
-        max_stock_level,
-      ]
+      [name, description, price, category, sport, status, stock, image]
     );
     res.status(201).json(product.rows[0]);
   } catch (error) {
+    console.error("Error adding product:", error);
     res.status(500).json({ error: "Failed to create product" });
   }
 };
 
 exports.updateProduct = async (req, res) => {
   const { id } = req.params;
-  const {
-    name,
-    description,
-    price,
-    category,
-    sport,
-    status,
-    stock,
-    min_stock_level,
-    max_stock_level,
-  } = req.body;
+  const { name, description, price, category, sport, status, stock } = req.body;
+  const image = req.file ? `/uploads/${req.file.filename}` : null;
 
   try {
-    const result = await pool.query(
-      `UPDATE product SET
-       name=$1, description=$2, price=$3, category=$4, sport=$5, status=$6,
-       stock=$7, min_stock_level=$8, max_stock_level=$9
-       WHERE id=$10 RETURNING *`,
-      [
+    let query, params;
+    if (image) {
+      query = `UPDATE product SET
+               name=$1, description=$2, price=$3, category=$4, sport=$5, status=$6,
+               stock=$7, image=$8
+               WHERE id=$9 RETURNING *`;
+      params = [
         name,
         description,
         price,
@@ -90,20 +72,26 @@ exports.updateProduct = async (req, res) => {
         sport,
         status,
         stock,
-        min_stock_level,
-        max_stock_level,
-
+        image,
         id,
-      ]
-    );
+      ];
+    } else {
+      query = `UPDATE product SET
+               name=$1, description=$2, price=$3, category=$4, sport=$5, status=$6,
+               stock=$7
+               WHERE id=$8 RETURNING *`;
+      params = [name, description, price, category, sport, status, stock, id];
+    }
+
+    const result = await pool.query(query, params);
     if (result.rows.length === 0)
       return res.status(404).json({ error: "Product not found" });
     res.json(result.rows[0]);
   } catch (err) {
+    console.error("Error updating product:", err);
     res.status(500).json({ error: "Failed to update product" });
   }
 };
-
 exports.deleteProduct = async (req, res) => {
   const { id } = req.params;
   try {

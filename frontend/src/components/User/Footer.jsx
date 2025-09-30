@@ -14,11 +14,10 @@ const Footer = () => {
               <span className="ml-3 text-2xl font-bold">Athletic Fit</span>
             </div>
             <p className="text-gray-400 mb-4 max-w-md">
-              Athletic Fit crafts premium custom teamwear, Any Sport | Any
-              Design | Any Size built to perform and made to last. From first
-              mockup to final stitch, we deliver precise personalization,
-              pro-grade materials, and reliable turnaround for clubs, schools,
-              leagues, and corporates.
+              Athletic Fit crafts premium custom teamwear, built to perform and
+              made to last. From first mockup to final stitch, we deliver
+              precise personalization, pro-grade materials, and reliable
+              turnaround for clubs, schools, leagues, and corporates.
             </p>
             <p className="text-green-400 font-semibold">
               Beyond the Boundaries.
