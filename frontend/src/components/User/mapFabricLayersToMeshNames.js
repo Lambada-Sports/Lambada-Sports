@@ -15,7 +15,7 @@ export default function MeshLayerMapper() {
       }
     });
 
-    console.log("🎯 All Mesh Names from Model:", meshNames);
+    console.log(" All Mesh Names from Model:", meshNames);
 
     // Auto mapping: fabric objects → mesh names
     const mappedLayers = designData.objects.map((obj, index) => {
@@ -30,8 +30,8 @@ export default function MeshLayerMapper() {
       };
     });
 
-    console.log("✅ Layer Mapping Result:", mappedLayers);
+    console.log(" Layer Mapping Result:", mappedLayers);
   }, [scene]);
 
-  return null; // This is a utility, nothing to render
+  return null;
 }

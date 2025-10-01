@@ -1,9 +1,10 @@
+/* eslint-disable no-unused-vars */
 // Modified SidebarPanel.jsx - Submit Order navigates to Order Form Page
-import { SketchPicker } from 'react-color'
-import { useState } from 'react'
-import { useNavigate } from 'react-router-dom' // ⭐ Add this
-import DesignEditor from './DesignEditor'
-import DesignLoader from './DesignLoader'
+import { SketchPicker } from "react-color";
+import { useState } from "react";
+import { useNavigate } from "react-router-dom"; // ⭐ Add this
+import DesignEditor from "./DesignEditor";
+import DesignLoader from "./DesignLoader";
 
 export default function SidebarPanel({
   selectedColor,
@@ -21,102 +22,156 @@ export default function SidebarPanel({
   pendingTextData,
   setPendingTextData,
 }) {
-  const navigate = useNavigate() // ⭐ Navigation hook
-  const [tab, setTab] = useState('Design')
-  const [editorImage, setEditorImage] = useState(null)
-  const [selectedJson, setSelectedJson] = useState(null)
-  const [isDesignSelected, setIsDesignSelected] = useState(false)
-  const [showOrderForm, setShowOrderForm] = useState(false)
-  const [savedDesign, setSavedDesign] = useState(null)
-  const [designPNG, setDesignPNG] = useState(null) // ⭐ Store PNG image
-  
+  const navigate = useNavigate(); // ⭐ Navigation hook
+  const [tab, setTab] = useState("Design");
+  const [editorImage, setEditorImage] = useState(null);
+  const [selectedJson, setSelectedJson] = useState(null);
+  const [isDesignSelected, setIsDesignSelected] = useState(false);
+  const [showOrderForm, setShowOrderForm] = useState(false);
+  const [savedDesign, setSavedDesign] = useState(null);
+  const [designPNG, setDesignPNG] = useState(null); // ⭐ Store PNG image
+
   // Text states
-  const [newText, setNewText] = useState('Sample Text')
-  const [selectedFont, setSelectedFont] = useState('Arial')
-  const [selectedTextColor, setSelectedTextColor] = useState('#000000')
-  const [selectedTextElement, setSelectedTextElement] = useState(null)
+  const [newText, setNewText] = useState("Sample Text");
+  const [selectedFont, setSelectedFont] = useState("Arial");
+  const [selectedTextColor, setSelectedTextColor] = useState("#000000");
+  const [selectedTextElement, setSelectedTextElement] = useState(null);
 
   // Order Form States
   const [orderForm, setOrderForm] = useState({
-    playerName: '',
-    jerseyNumber: '',
+    playerName: "",
+    jerseyNumber: "",
     logoFile: null,
     hassponsor: false,
-    sponsorName: '',
-    jerseyQuantity: 1
-  })
+    sponsorName: "",
+    jerseyQuantity: 1,
+  });
 
   const designOptions = [
-    { name: "Design 1", json: "/design/design1.json", preview: "/preview/preview1.png" },
-    { name: "Design 2", json: "/design/design2.json", preview: "/preview/preview2.png" },
-    { name: "Design 3", json: "/design/design3.json", preview: "/preview/preview3.png" },
-    { name: "Design 4", json: "/design/design4.json", preview: "/preview/preview4.png" },
+    {
+      name: "Design 1",
+      json: "/design/design1.json",
+      preview: "/preview/preview1.png",
+    },
+    {
+      name: "Design 2",
+      json: "/design/design2.json",
+      preview: "/preview/preview2.png",
+    },
+    {
+      name: "Design 3",
+      json: "/design/design3.json",
+      preview: "/preview/preview3.png",
+    },
+    {
+      name: "Design 4",
+      json: "/design/design4.json",
+      preview: "/preview/preview4.png",
+    },
   ];
 
   const fontOptions = [
-    'Arial', 'Times New Roman', 'Helvetica', 'Georgia', 
-    'Verdana', 'Courier New', 'Impact', 'Comic Sans MS'
+    "Arial",
+    "Times New Roman",
+    "Helvetica",
+    "Georgia",
+    "Verdana",
+    "Courier New",
+    "Impact",
+    "Comic Sans MS",
   ];
 
   // Get available tabs based on design selection
   const getAvailableTabs = () => {
-    const baseTabs = ['Design', 'Custom']
+    const baseTabs = ["Design", "Custom"];
     if (isDesignSelected) {
-      return ['Design', 'Colors', 'Custom']
+      return ["Design", "Colors", "Custom"];
     }
-    return baseTabs
-  }
+    return baseTabs;
+  };
 
   // Handle logo file upload
   const handleLogoUpload = (e) => {
-    const file = e.target.files[0]
+    const file = e.target.files[0];
     if (file) {
-      setOrderForm(prev => ({ ...prev, logoFile: file }))
+      setOrderForm((prev) => ({ ...prev, logoFile: file }));
     }
-  }
+  };
 
   // Handle order form input changes
   const handleOrderFormChange = (field, value) => {
-    setOrderForm(prev => ({ ...prev, [field]: value }))
-  }
+    setOrderForm((prev) => ({ ...prev, [field]: value }));
+  };
 
-  // ⭐ Save design function - Updated
-  const saveDesign = () => {
+  // Save design function
+  const saveDesign = async () => {
     if (!selectedJson) {
-      alert('Please select a design first!')
-      return
+      alert("Please select a design first!");
+      return;
     }
-    
+
     const designData = {
       json: selectedJson,
       colors: selectedColor,
       textElements: textElements,
-      timestamp: new Date().toISOString()
-    }
-    
-    setSavedDesign(designData)
-    setShowOrderForm(true)
-    alert('Design saved successfully! Please fill in your details below.')
-  }
+      timestamp: new Date().toISOString(),
+    };
 
-  // ⭐ Submit order - Navigate to Order Form Page
+    try {
+      const token = localStorage.getItem("customerToken");
+      if (!token) {
+        alert("You must be logged in to save a design.");
+        navigate("/login");
+        return;
+      }
+
+      const response = await fetch(
+        "http://localhost:5000/api/customer/design",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({ design_data: designData }),
+        }
+      );
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || "Failed to save design");
+      }
+
+      console.log("Design saved to DB:", data);
+
+      setSavedDesign(designData);
+      setShowOrderForm(true);
+      alert("Design saved successfully! Please fill in your details below.");
+    } catch (err) {
+      console.error("Error saving design:", err);
+      alert("Failed to save design. Please try again.");
+    }
+  };
+
+  //  Submit order - Navigate to Order Form Page
   const submitOrder = () => {
     // Validation
     if (!orderForm.playerName.trim()) {
-      alert('Please enter player name')
-      return
+      alert("Please enter player name");
+      return;
     }
     if (!orderForm.jerseyNumber.trim()) {
-      alert('Please enter jersey number')
-      return
+      alert("Please enter jersey number");
+      return;
     }
     if (!orderForm.jerseyQuantity || orderForm.jerseyQuantity < 1) {
-      alert('Please enter valid quantity')
-      return
+      alert("Please enter valid quantity");
+      return;
     }
     if (orderForm.hassponsor && !orderForm.sponsorName.trim()) {
-      alert('Please enter sponsor name')
-      return
+      alert("Please enter sponsor name");
+      return;
     }
 
     // Create order object
@@ -124,40 +179,40 @@ export default function SidebarPanel({
       design: savedDesign,
       orderDetails: orderForm,
       orderId: Date.now(),
-      status: 'pending',
-      designImage: designPNG // ⭐ Include PNG image
-    }
+      status: "pending",
+      designImage: designPNG, // Include PNG image
+    };
 
-    console.log('📦 Order Submitted:', orderData)
-    
-    // ⭐ Navigate to Order Form Page with data
-    navigate('/order-form', {
+    console.log(" Order Submitted:", orderData);
+
+    //  Navigate to Order Form Page with data
+    navigate("/order-form", {
       state: {
-        designImage: designPNG, // ⭐ Pass PNG image
-        sport: 'Soccer',
-        fit: 'Regular',
-        style: 'Custom',
-        orderData: orderData // ⭐ Pass complete order data
-      }
-    })
-  }
+        designImage: designPNG, //  Pass PNG image
+        sport: "Soccer",
+        fit: "Regular",
+        style: "Custom",
+        orderData: orderData, //  Pass complete order data
+      },
+    });
+  };
 
   // Create text for placement
   const createTextForPlacement = () => {
     if (!newText.trim()) return;
-    
+
     const textData = {
       text: newText,
       font: selectedFont,
       color: selectedTextColor,
       scale: 1,
       rotation: [0, 0, 0],
-      visible: true
+      visible: true,
     };
-    
+
     setPendingTextData(textData);
     setIsAddingText(true);
-    setNewText('Sample Text');
+    setNewText("Sample Text");
   };
 
   // Cancel text placement
@@ -168,14 +223,14 @@ export default function SidebarPanel({
 
   // Update text element
   const updateTextElement = (id, updates) => {
-    setTextElements(textElements.map(el => 
-      el.id === id ? { ...el, ...updates } : el
-    ));
+    setTextElements(
+      textElements.map((el) => (el.id === id ? { ...el, ...updates } : el))
+    );
   };
 
   // Delete text element
   const deleteTextElement = (id) => {
-    setTextElements(textElements.filter(el => el.id !== id));
+    setTextElements(textElements.filter((el) => el.id !== id));
     if (selectedTextElement?.id === id) {
       setSelectedTextElement(null);
     }
@@ -189,21 +244,23 @@ export default function SidebarPanel({
       setSelectedJson(jsonData);
       setSelectedDesignJSON(jsonData);
       setIsDesignSelected(true);
-      setTab('Colors'); // Auto switch to colors tab after design selection
+      setTab("Colors"); // Auto switch to colors tab after design selection
     } catch (err) {
-      console.error("❌ Error loading design JSON:", err);
+      console.error(" Error loading design JSON:", err);
     }
   };
 
   return (
     <div className="p-4 md:p-6">
-      <h1 className="text-lg md:text-xl font-bold mb-4">Soccer Jersey F3 Basic</h1>
+      <h1 className="text-lg md:text-xl font-bold mb-4">Sports Jersey </h1>
 
       {/* Show only Order Form when save button is clicked */}
       {showOrderForm ? (
         <div className="mb-6 p-4 bg-green-50 border border-green-200 rounded-lg">
           <div className="flex items-center justify-between mb-4">
-            <h3 className="text-lg font-bold text-green-800">📋 Complete Your Order</h3>
+            <h3 className="text-lg font-bold text-green-800">
+              📋 Complete Your Order
+            </h3>
             <button
               onClick={() => setShowOrderForm(false)}
               className="text-red-500 hover:text-red-700 font-bold"
@@ -212,7 +269,7 @@ export default function SidebarPanel({
             </button>
           </div>
 
-          {/* ⭐ Show design preview if available */}
+          {/*  Show design preview if available */}
           {designPNG && (
             <div className="mb-4 flex justify-center">
               <img
@@ -226,11 +283,15 @@ export default function SidebarPanel({
           <div className="space-y-4">
             {/* Player Name */}
             <div>
-              <label className="block text-sm font-medium mb-1">Player Name *</label>
+              <label className="block text-sm font-medium mb-1">
+                Player Name *
+              </label>
               <input
                 type="text"
                 value={orderForm.playerName}
-                onChange={(e) => handleOrderFormChange('playerName', e.target.value)}
+                onChange={(e) =>
+                  handleOrderFormChange("playerName", e.target.value)
+                }
                 className="w-full border p-2 rounded text-sm"
                 placeholder="Enter player name"
               />
@@ -238,11 +299,15 @@ export default function SidebarPanel({
 
             {/* Jersey Number */}
             <div>
-              <label className="block text-sm font-medium mb-1">Jersey Number *</label>
+              <label className="block text-sm font-medium mb-1">
+                Jersey Number *
+              </label>
               <input
                 type="text"
                 value={orderForm.jerseyNumber}
-                onChange={(e) => handleOrderFormChange('jerseyNumber', e.target.value)}
+                onChange={(e) =>
+                  handleOrderFormChange("jerseyNumber", e.target.value)
+                }
                 className="w-full border p-2 rounded text-sm"
                 placeholder="Enter jersey number"
               />
@@ -250,7 +315,9 @@ export default function SidebarPanel({
 
             {/* Logo Upload */}
             <div>
-              <label className="block text-sm font-medium mb-1">Logo (Optional)</label>
+              <label className="block text-sm font-medium mb-1">
+                Logo (Optional)
+              </label>
               <input
                 type="file"
                 accept="image/*"
@@ -270,16 +337,20 @@ export default function SidebarPanel({
                 <input
                   type="checkbox"
                   checked={orderForm.hassponsor}
-                  onChange={(e) => handleOrderFormChange('hassponsor', e.target.checked)}
+                  onChange={(e) =>
+                    handleOrderFormChange("hassponsor", e.target.checked)
+                  }
                 />
                 <span className="text-sm font-medium">Add Sponsor</span>
               </label>
-              
+
               {orderForm.hassponsor && (
                 <input
                   type="text"
                   value={orderForm.sponsorName}
-                  onChange={(e) => handleOrderFormChange('sponsorName', e.target.value)}
+                  onChange={(e) =>
+                    handleOrderFormChange("sponsorName", e.target.value)
+                  }
                   className="w-full border p-2 rounded text-sm"
                   placeholder="Enter sponsor name"
                 />
@@ -288,12 +359,19 @@ export default function SidebarPanel({
 
             {/* Jersey Quantity */}
             <div>
-              <label className="block text-sm font-medium mb-1">Number of Jerseys *</label>
+              <label className="block text-sm font-medium mb-1">
+                Number of Jerseys *
+              </label>
               <input
                 type="number"
                 min="1"
                 value={orderForm.jerseyQuantity}
-                onChange={(e) => handleOrderFormChange('jerseyQuantity', parseInt(e.target.value))}
+                onChange={(e) =>
+                  handleOrderFormChange(
+                    "jerseyQuantity",
+                    parseInt(e.target.value)
+                  )
+                }
                 className="w-full border p-2 rounded text-sm"
               />
             </div>
@@ -314,10 +392,15 @@ export default function SidebarPanel({
             <div className="mb-4 p-3 bg-blue-100 border border-blue-300 rounded-lg">
               <div className="flex items-center justify-between">
                 <div>
-                  <div className="font-semibold text-blue-800">🎯 Text Placement Mode</div>
-                  <div className="text-sm text-blue-600">Click anywhere on the jersey to place your text</div>
+                  <div className="font-semibold text-blue-800">
+                    🎯 Text Placement Mode
+                  </div>
+                  <div className="text-sm text-blue-600">
+                    Click anywhere on the jersey to place your text
+                  </div>
                   <div className="text-xs text-blue-500 mt-1">
-                    Text: "{pendingTextData?.text}" | Font: {pendingTextData?.font}
+                    Text: "{pendingTextData?.text}" | Font:{" "}
+                    {pendingTextData?.font}
                   </div>
                 </div>
                 <button
@@ -337,7 +420,7 @@ export default function SidebarPanel({
                 key={t}
                 onClick={() => setTab(t)}
                 className={`px-2 md:px-3 py-1 md:py-2 rounded text-sm md:text-base whitespace-nowrap flex-shrink-0 ${
-                  tab === t ? 'bg-black text-white' : 'bg-gray-200'
+                  tab === t ? "bg-black text-white" : "bg-gray-200"
                 }`}
               >
                 {t}
@@ -366,23 +449,31 @@ export default function SidebarPanel({
                   </div>
                 ))}
               </div>
-              
+
               {/* Design Selection Status */}
               {isDesignSelected && (
                 <div className="mt-4 p-3 bg-green-100 border border-green-300 rounded-lg">
-                  <div className="font-semibold text-green-800">✅ Design Selected!</div>
-                  <div className="text-sm text-green-600">You can now customize colors in the Colors tab.</div>
+                  <div className="font-semibold text-green-800">
+                    ✅ Design Selected!
+                  </div>
+                  <div className="text-sm text-green-600">
+                    You can now customize colors in the Colors tab.
+                  </div>
                 </div>
               )}
             </div>
           )}
 
           {/* -------------------- Colors Tab (Only shown after design selection) -------------------- */}
-          {tab === 'Colors' && isDesignSelected && selectedJson && (
+          {tab === "Colors" && isDesignSelected && selectedJson && (
             <div className="space-y-4">
               <div className="bg-blue-50 p-3 rounded-lg">
-                <h3 className="font-semibold text-blue-800 mb-2">🎨 Customize Colors</h3>
-                <p className="text-sm text-blue-600">Select a layer and change its color</p>
+                <h3 className="font-semibold text-blue-800 mb-2">
+                  🎨 Customize Colors
+                </h3>
+                <p className="text-sm text-blue-600">
+                  Select a layer and change its color
+                </p>
               </div>
 
               <select
@@ -405,25 +496,25 @@ export default function SidebarPanel({
                     styles={{
                       default: {
                         picker: {
-                          width: '100%',
-                          maxWidth: '300px'
-                        }
-                      }
+                          width: "100%",
+                          maxWidth: "300px",
+                        },
+                      },
                     }}
                     onChange={(color) => {
-                      setSelectedColor(color.hex)
-                      const updatedJson = { ...selectedJson }
-                      updatedJson.objects = [...updatedJson.objects]
+                      setSelectedColor(color.hex);
+                      const updatedJson = { ...selectedJson };
+                      updatedJson.objects = [...updatedJson.objects];
                       updatedJson.objects[selectedLayer] = {
                         ...updatedJson.objects[selectedLayer],
                         fill: color.hex,
                         stroke: null,
                         shadow: null,
                         opacity: 1,
-                        fillRule: 'nonzero'
-                      }
-                      setSelectedJson(updatedJson)
-                      setSelectedDesignJSON(updatedJson)
+                        fillRule: "nonzero",
+                      };
+                      setSelectedJson(updatedJson);
+                      setSelectedDesignJSON(updatedJson);
                     }}
                   />
                 </div>
@@ -443,15 +534,15 @@ export default function SidebarPanel({
           )}
 
           {/* -------------------- Custom Tab -------------------- */}
-          {tab === 'Custom' && (
+          {tab === "Custom" && (
             <div className="w-full">
               <DesignEditor
                 userImage={selectedDesignURL}
                 editorImage={editorImage}
                 setEditorImage={setEditorImage}
                 setSelectedDesignURL={(finalImg) => {
-                  setSelectedDesignURL(finalImg)
-                  setUserDesign(finalImg)
+                  setSelectedDesignURL(finalImg);
+                  setUserDesign(finalImg);
                 }}
               />
             </div>
@@ -459,17 +550,17 @@ export default function SidebarPanel({
         </>
       )}
 
-      {/* ⭐ JSON loader for designs - Updated to capture PNG */}
+      {/*  JSON loader for designs - Updated to capture PNG */}
       {selectedJson && (
         <DesignLoader
           jsonData={selectedJson}
           onExport={(pngData) => {
-            console.log("📤 Design PNG exported")
-            setDesignPNG(pngData) // ⭐ Store PNG image
-            setUserDesign(pngData)
+            console.log("📤 Design PNG exported");
+            setDesignPNG(pngData); //  Store PNG image
+            setUserDesign(pngData);
           }}
         />
       )}
     </div>
-  )
+  );
 }
