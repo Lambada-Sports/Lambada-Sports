@@ -1,13 +1,11 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
-import { useAuth0 } from "@auth0/auth0-react";
 import { CreditCard, MapPin, User, Phone, Mail, ArrowLeft } from "lucide-react";
 import Navbar from "./Navbar";
 
 export default function CheckoutPage() {
   const { state } = useLocation();
   const navigate = useNavigate();
-  const { getAccessTokenSilently, isAuthenticated } = useAuth0();
   const { cartItems = [], total = 0 } = state || {};
 
   const [formData, setFormData] = useState({
@@ -22,28 +20,19 @@ export default function CheckoutPage() {
 
   const [isProcessing, setIsProcessing] = useState(false);
 
-  // Redirect if not authenticated
-  useEffect(() => {
-    if (!isAuthenticated) {
-      navigate("/login");
-    }
-  }, [isAuthenticated, navigate]);
-
-  // Redirect if no cart items
-  {
-    /*useEffect(() => {
-    if (!cartItems || cartItems.length === 0) {
-      navigate("/cart");
-    }
-  }, [cartItems, navigate]);*/
-  }
-
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({
       ...prev,
       [name]: value,
     }));
+  };
+
+  // Calculate total
+  const calculateTotal = () => {
+    return cartItems.reduce((total, item) => {
+      return total + (item.price || 0) * item.quantity;
+    }, 0);
   };
 
   const handlePlaceOrder = async (e) => {
@@ -64,43 +53,6 @@ export default function CheckoutPage() {
     }
 
     setIsProcessing(true);
-
-    try {
-      const token = await getAccessTokenSilently();
-
-      console.log(" Creating Stripe checkout session...");
-
-      // Calling API to create Stripe checkout session
-      const response = await fetch(
-        "http://localhost:5000/api/checkout/create-session",
-        {
-          method: "POST",
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            customer_info: formData,
-          }),
-        }
-      );
-
-      if (response.ok) {
-        const data = await response.json();
-        console.log(" Stripe session created:", data);
-
-        // Redirect to Stripe Checkout
-        window.location.href = data.sessionUrl;
-      } else {
-        const errorData = await response.json();
-        console.error(" Error creating checkout session:", errorData);
-        throw new Error(errorData.error || "Failed to create checkout session");
-      }
-    } catch (error) {
-      console.error(" Error during checkout:", error);
-      alert(`Checkout failed: ${error.message}. Please try again.`);
-      setIsProcessing(false);
-    }
   };
 
   return (
@@ -135,12 +87,6 @@ export default function CheckoutPage() {
                 <h1 className="text-3xl font-bold text-gray-800 font-michroma">
                   Checkout
                 </h1>
-              </div>
-              <div className="text-right">
-                <p className="text-sm text-gray-600">Total Amount</p>
-                <p className="text-2xl font-bold text-blue-600">
-                  Rs. {total.toLocaleString()}
-                </p>
               </div>
             </div>
           </div>
@@ -314,7 +260,7 @@ export default function CheckoutPage() {
                         {item.name || "Custom Sports Jersey"}
                       </h3>
                       <p className="text-sm text-gray-600">
-                        Size: {item.sizes} • Qty: {item.quantity}
+                        Qty: {item.quantity}
                       </p>
                       {item.customer_note && (
                         <p className="text-sm text-gray-600">
@@ -324,7 +270,7 @@ export default function CheckoutPage() {
                     </div>
                     <div className="text-right">
                       <p className="font-semibold text-gray-800">
-                        Rs. {(1500 * item.quantity).toLocaleString()}
+                        Rs. {calculateTotal().toLocaleString()}
                       </p>
                     </div>
                   </div>

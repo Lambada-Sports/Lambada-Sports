@@ -11,10 +11,40 @@ const Login = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setIsLoading(true);
-    // Simulate API call
-    await new Promise((resolve) => setTimeout(resolve, 2000));
-    setIsLoading(false);
-    console.log("Login attempted with:", { email, password, rememberMe });
+
+    try {
+      const response = await fetch("http://localhost:5000/api/login", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ email, password }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        alert(data.error || "Login failed");
+        setIsLoading(false);
+        return;
+      }
+
+      localStorage.setItem("customerToken", data.token);
+      localStorage.setItem("customerUser", JSON.stringify(data.user));
+
+      if (rememberMe) {
+        localStorage.setItem("rememberedEmail", email);
+      } else {
+        localStorage.removeItem("rememberedEmail");
+      }
+
+      window.location.href = "/";
+    } catch (err) {
+      console.error("Login error:", err);
+      alert("Something went wrong. Please try again.");
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (

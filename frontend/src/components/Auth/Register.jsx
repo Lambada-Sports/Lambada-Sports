@@ -24,14 +24,47 @@ const Register = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
     if (password !== confirmPassword) {
       alert("Passwords do not match!");
       return;
     }
+
     setIsLoading(true);
-    // Simulate API call
-    await new Promise((resolve) => setTimeout(resolve, 2000));
-    setIsLoading(false);
+
+    try {
+      const response = await fetch("http://localhost:5000/api/register", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          name,
+          email,
+          password,
+          phone_number: phone,
+          address,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        alert(data.error || "Registration failed");
+        setIsLoading(false);
+        return;
+      }
+
+      localStorage.setItem("customerToken", data.token);
+      localStorage.setItem("customerUser", JSON.stringify(data.user));
+
+      window.location.href = "/";
+    } catch (err) {
+      console.error("Registration error:", err);
+      alert("Something went wrong. Please try again.");
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (

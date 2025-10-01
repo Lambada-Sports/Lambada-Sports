@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   ChevronDown,
   Menu,
@@ -6,17 +6,38 @@ import {
   Search,
   ShoppingCart,
   LogIn,
+  LogOut,
 } from "lucide-react";
 
 const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [shopDropdown, setShopDropdown] = useState(false);
   const [sportsDropdown, setSportsDropdown] = useState(false);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [user, setUser] = useState(null);
+
+  useEffect(() => {
+    const token = localStorage.getItem("customerToken");
+    const userData = localStorage.getItem("customerUser");
+
+    if (token && userData) {
+      setIsLoggedIn(true);
+      setUser(JSON.parse(userData));
+    }
+  }, []);
+
+  const handleLogout = () => {
+    localStorage.removeItem("customerToken");
+    localStorage.removeItem("customerUser");
+    setIsLoggedIn(false);
+    setUser(null);
+    window.location.href = "/";
+  };
 
   const shopItems = [
     "Jerseys",
     "Tracksuits",
-    "Bottom & Shorts",
+    "Bottoms & Shorts",
     "Lifestyle Kits",
     "Bestsellers",
     "Hoodies",
@@ -137,17 +158,36 @@ const Navbar = () => {
               <Search className="h-6 w-6" />
             </button>
             {/* Cart Icon */}
-            <button className="text-gray-900 hover:text-green-600 p-2 transition-colors">
+            <button
+              className="text-gray-900 hover:text-green-600 p-2 transition-colors"
+              onClick={() => (window.location.href = "/cart")}
+            >
               <ShoppingCart className="h-6 w-6" />
             </button>
 
-            {/* Login Icon */}
-            <button
-              className="text-gray-900 hover:text-green-600 p-2 transition-colors"
-              onClick={() => (window.location.href = "/login")}
-            >
-              <LogIn className="h-6 w-6" />
-            </button>
+            {/* Login/Logout */}
+            {isLoggedIn ? (
+              <div className="flex items-center space-x-2">
+                <span className="text-sm text-gray-700">
+                  Hello, {user?.name}
+                </span>
+                <button
+                  className="text-gray-900 hover:text-red-600 p-2 transition-colors"
+                  onClick={handleLogout}
+                  title="Logout"
+                >
+                  <LogOut className="h-6 w-6" />
+                </button>
+              </div>
+            ) : (
+              <button
+                className="text-gray-900 hover:text-green-600 p-2 transition-colors"
+                onClick={() => (window.location.href = "/login")}
+                title="Login"
+              >
+                <LogIn className="h-6 w-6" />
+              </button>
+            )}
           </div>
 
           {/* Mobile menu button */}

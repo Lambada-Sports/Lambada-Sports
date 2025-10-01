@@ -1,12 +1,10 @@
 import { useState, useEffect } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
-import { useAuth0 } from "@auth0/auth0-react";
 import Navbar from "./Navbar";
 
 export default function OrderFormPage() {
   const { state } = useLocation();
   const navigate = useNavigate();
-  const { getAccessTokenSilently } = useAuth0();
 
   const [sportState, setSportState] = useState(state?.sport || "");
   const [fitState, setFitState] = useState(state?.fit || "");
@@ -35,7 +33,7 @@ export default function OrderFormPage() {
 
   const handleAddToCart = async () => {
     try {
-      const token = await getAccessTokenSilently();
+      const token = localStorage.getItem("customerToken");
 
       const orderData = {
         product_id: productId,
