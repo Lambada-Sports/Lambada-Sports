@@ -13,7 +13,7 @@ export default function OrderFormPage() {
   const [quantity, setQuantity] = useState(1);
   const [address, setAddress] = useState("");
   const [designImage, setDesignImage] = useState(state?.designImage || "");
-  const [productId] = useState(state?.product_id || 1);
+  const [productId] = useState(state?.product_id || null);
   const [designId] = useState(state?.designId || null);
 
   useEffect(() => {
@@ -101,11 +101,18 @@ export default function OrderFormPage() {
           <div className="grid gap-4">
             <div>
               <label className="block text-gray-700 mb-1">Sport</label>
-              <input
+              <select
                 value={sportState}
                 onChange={(e) => setSportState(e.target.value)}
                 className="w-full border px-3 py-2 rounded shadow-sm"
-              />
+              >
+                <option value="Football">Football</option>
+                <option value="Basketball">Basketball</option>
+                <option value="Baseball">Rugby</option>
+                <option value="Soccer">Cricket</option>
+                <option value="Tennis">Volleyball</option>
+                <option value="Other">Hockey</option>
+              </select>
             </div>
 
             <div>

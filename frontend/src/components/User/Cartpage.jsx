@@ -38,6 +38,10 @@ export default function CartPage() {
             console.log(` Cart Item ${index + 1}:`, {
               id: item.id,
               name: item.name,
+              design_id: item.design_id,
+              design_data: item.design_data,
+              price: item.price,
+              quantity: item.quantity,
             });
           });
           setCartItems(data);
@@ -172,8 +176,9 @@ export default function CartPage() {
                               src={
                                 typeof item.design_data === "string"
                                   ? item.design_data
-                                  : item.design_data.imageURL ||
-                                    item.design_data
+                                  : item.design_data?.imageURL ||
+                                    item.design_data?.preview ||
+                                    "/assets/logo.png"
                               }
                               alt="Custom Design"
                               className="w-full h-full object-contain"
@@ -182,7 +187,7 @@ export default function CartPage() {
                                   "Design image failed to load:",
                                   item.design_data
                                 );
-                                e.target.style.display = "none";
+                                e.target.src = "/assets/logo.png";
                               }}
                             />
                           </div>
@@ -197,20 +202,12 @@ export default function CartPage() {
                           {item.name || "Custom Sports Jersey"}
                         </h3>
 
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 place-items-center text-sm mb-4">
+                        <div className="flex items-center justify-center mb-5 mt-5">
                           <div>
                             <p className="text-blue-600 font-semibold">
                               {item.description}
                             </p>
                           </div>
-                          {/*<div>
-                            <span className="font-medium text-gray-600">
-                              Details:
-                            </span>
-                            <p className="text-gray-700 text-sm">
-                              {item.customer_note}
-                            </p>
-                          </div>*/}
                         </div>
 
                         <div className="flex items-center justify-center">

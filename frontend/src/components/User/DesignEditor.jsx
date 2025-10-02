@@ -1,126 +1,131 @@
-import { useEffect, useRef, useState } from 'react'
-import ElementsPanel from './ElementsPanel'
-import { useNavigate, useLocation } from 'react-router-dom'
+/* eslint-disable no-unused-vars */
+import { useEffect, useRef, useState, useCallback } from "react";
+import ElementsPanel from "./ElementsPanel";
+import { useNavigate, useLocation } from "react-router-dom";
 
 export default function DesignEditor({ userImage, setSelectedDesignURL }) {
-  const canvasRef = useRef(null)
-  const [canvas, setCanvas] = useState(null)
-  const [fabricInstance, setFabricInstance] = useState(null)
-  const [history, setHistory] = useState([])
-  const [redoStack, setRedoStack] = useState([])
-  const [cropRect, setCropRect] = useState(null)
-  const [activeImage, setActiveImage] = useState(null)
-  const [isImageLoaded, setIsImageLoaded] = useState(false)
-  const [editorImage, setEditorImage] = useState(null)
-  const [isModified, setIsModified] = useState(false)
-  const [isCropping, setIsCropping] = useState(false) // ⭐ New state for crop mode
-  
-  const navigate = useNavigate()
-  const location = useLocation()
+  const canvasRef = useRef(null);
+  const [canvas, setCanvas] = useState(null);
+  const [fabricInstance, setFabricInstance] = useState(null);
+  const [history, setHistory] = useState([]);
+  const [redoStack, setRedoStack] = useState([]);
+  const [cropRect, setCropRect] = useState(null);
+  const [activeImage, setActiveImage] = useState(null);
+  const [isImageLoaded, setIsImageLoaded] = useState(false);
+  const [editorImage, setEditorImage] = useState(null);
+  const [isModified, setIsModified] = useState(false);
+  const [isCropping, setIsCropping] = useState(false);
 
-  const { sport, fit, style } = location.state || {}
+  const navigate = useNavigate();
+  const location = useLocation();
+
+  const { sport, fit, style } = location.state || {};
 
   // Save to history
-  const saveToHistory = () => {
-    if (!canvas) return
-    const current = canvas.toJSON()
-    setHistory(prev => [...prev, current])
-    setRedoStack([])
-    setIsModified(true) // ⭐ Mark as modified
-  }
+  const saveToHistory = useCallback(() => {
+    if (!canvas) return;
+    const current = canvas.toJSON();
+    setHistory((prev) => [...prev, current]);
+    setRedoStack([]);
+    setIsModified(true);
+  }, [canvas]);
 
-  // ⭐ Canvas init - Responsive size
+  //  Canvas init
   useEffect(() => {
     const init = async () => {
-      const fabricModule = await import('fabric')
-      const fabric = fabricModule.fabric || fabricModule.default || fabricModule
-      window.fabric = fabric
+      const fabricModule = await import("fabric");
+      const fabric =
+        fabricModule.fabric || fabricModule.default || fabricModule;
+      window.fabric = fabric;
 
-      setFabricInstance(fabric)
+      setFabricInstance(fabric);
 
       if (canvasRef.current && canvasRef.current.__fabricCanvas) {
-        canvasRef.current.__fabricCanvas.dispose()
+        canvasRef.current.__fabricCanvas.dispose();
       }
 
-      // ⭐ Responsive canvas size
-      const isMobile = window.innerWidth < 768
-      const canvasWidth = isMobile ? window.innerWidth - 40 : 750
-      const canvasHeight = isMobile ? window.innerWidth - 40 : 700
+      //  Responsive canvas size
+      const isMobile = window.innerWidth < 768;
+      const canvasWidth = isMobile ? window.innerWidth - 40 : 750;
+      const canvasHeight = isMobile ? window.innerWidth - 40 : 700;
 
       const newCanvas = new fabric.Canvas(canvasRef.current, {
         width: canvasWidth,
         height: canvasHeight,
-        backgroundColor: '#fff',
-      })
+        backgroundColor: "#fff",
+      });
 
-      canvasRef.current.__fabricCanvas = newCanvas
-      setCanvas(newCanvas)
+      canvasRef.current.__fabricCanvas = newCanvas;
+      setCanvas(newCanvas);
 
       // Mask image load
-      const bgImg = new Image()
-      bgImg.crossOrigin = 'anonymous'
-      bgImg.src = '/textures/sample.png'
+      const bgImg = new Image();
+      bgImg.crossOrigin = "anonymous";
+      bgImg.src = "/textures/sample.png";
       bgImg.onload = () => {
         const fabricBg = new fabric.Image(bgImg, {
           scaleX: newCanvas.width / bgImg.width,
           scaleY: newCanvas.height / bgImg.height,
           angle: 180,
-          originX: 'center',
-          originY: 'center',
+          originX: "center",
+          originY: "center",
           left: newCanvas.width / 2,
           top: newCanvas.height / 2,
           selectable: false,
           evented: false,
-          absolutePositioned: true
-        })
+          absolutePositioned: true,
+        });
 
-        newCanvas.clipPath = fabricBg
-        newCanvas.backgroundImage = fabricBg
-        newCanvas.requestRenderAll()
-        newCanvas.renderAll()
-        saveToHistory()
-      }
-    }
+        newCanvas.clipPath = fabricBg;
+        newCanvas.backgroundImage = fabricBg;
+        newCanvas.requestRenderAll();
+        newCanvas.renderAll();
+        saveToHistory();
+      };
+    };
 
-    init()
-  }, [])
+    init();
+  }, [saveToHistory]);
 
   const handleFileChange = (e) => {
-    const file = e.target.files[0]
+    const file = e.target.files[0];
     if (file) {
-      const reader = new FileReader()
+      const reader = new FileReader();
       reader.onload = () => {
-        const imgData = reader.result
-        setEditorImage(imgData)
-      }
-      reader.readAsDataURL(file)
+        const imgData = reader.result;
+        setEditorImage(imgData);
+      };
+      reader.readAsDataURL(file);
     }
-  }
+  };
 
   // Load User Image
   useEffect(() => {
-    const imageToUse = editorImage || userImage
+    const imageToUse = editorImage || userImage;
 
     if (fabricInstance && canvas && imageToUse) {
-      console.log("🟡 Loading image to canvas")
+      console.log(" Loading image to canvas");
 
-      const img = new Image()
-      img.crossOrigin = 'anonymous'
-      img.src = imageToUse
+      const img = new Image();
+      img.crossOrigin = "anonymous";
+      img.src = imageToUse;
 
       img.onload = () => {
-        console.log("✅ Image loaded")
+        console.log(" Image loaded");
 
-        const tempCanvas = document.createElement('canvas')
-        tempCanvas.width = img.width
-        tempCanvas.height = img.height
+        const tempCanvas = document.createElement("canvas");
+        tempCanvas.width = img.width;
+        tempCanvas.height = img.height;
 
-        const ctx = tempCanvas.getContext('2d')
-        ctx.drawImage(img, 0, 0)
+        const ctx = tempCanvas.getContext("2d");
+        ctx.drawImage(img, 0, 0);
 
-        const scale = Math.min(canvas.width / img.width, canvas.height / img.height)
-        const left = (canvas.width - img.width * scale) / 2
-        const top = (canvas.height - img.height * scale) / 2
+        const scale = Math.min(
+          canvas.width / img.width,
+          canvas.height / img.height
+        );
+        const left = (canvas.width - img.width * scale) / 2;
+        const top = (canvas.height - img.height * scale) / 2;
 
         const fabricImg = new window.fabric.Image(img, {
           left,
@@ -131,243 +136,283 @@ export default function DesignEditor({ userImage, setSelectedDesignURL }) {
           hasControls: true,
           selectable: true,
           opacity: 0.7,
-        })
+        });
 
-        fabricImg._tempCanvas = tempCanvas
-        fabricImg._tempCtx = ctx
+        fabricImg._tempCanvas = tempCanvas;
+        fabricImg._tempCtx = ctx;
 
-        canvas.add(fabricImg)
-        canvas.setActiveObject(fabricImg)
-        canvas.renderAll()
-        setIsImageLoaded(true)
-        setActiveImage(fabricImg)
-        saveToHistory()
+        canvas.add(fabricImg);
+        canvas.setActiveObject(fabricImg);
+        canvas.renderAll();
+        setIsImageLoaded(true);
+        setActiveImage(fabricImg);
+        saveToHistory();
 
-        console.log("🎉 Image added to canvas!")
-      }
+        console.log("🎉 Image added to canvas!");
+      };
 
       img.onerror = () => {
-        console.error('❌ Image load error!')
-      }
+        console.error(" Image load error!");
+      };
     }
-  }, [userImage, canvas, fabricInstance, editorImage])
+  }, [userImage, canvas, fabricInstance, editorImage, saveToHistory]);
 
-  // ✂️ Crop Functions
+  //  Crop Functions
   const handleStartCrop = () => {
-    const active = canvas.getActiveObject()
-    if (!active || active.type !== 'image') {
-      alert('Please select an image first!')
-      return
+    const active = canvas.getActiveObject();
+    if (!active || active.type !== "image") {
+      alert("Please select an image first!");
+      return;
     }
 
-    setIsCropping(true)
+    setIsCropping(true);
 
     const rect = new fabricInstance.Rect({
       left: active.left + 30,
       top: active.top + 30,
       width: active.width * active.scaleX * 0.5,
       height: active.height * active.scaleY * 0.5,
-      fill: 'rgba(0,123,255,0.2)',
-      stroke: '#007bff',
+      fill: "rgba(0,123,255,0.2)",
+      stroke: "#007bff",
       strokeWidth: 2,
       strokeDashArray: [5, 5],
       hasBorders: true,
       hasControls: true,
-      cornerColor: '#007bff',
+      cornerColor: "#007bff",
       cornerSize: 10,
-    })
+    });
 
-    setCropRect(rect)
-    canvas.add(rect)
-    canvas.setActiveObject(rect)
-    canvas.renderAll()
-  }
+    setCropRect(rect);
+    canvas.add(rect);
+    canvas.setActiveObject(rect);
+    canvas.renderAll();
+  };
 
   const handleApplyCrop = () => {
-    if (!cropRect || !canvas) return
-    const image = canvas.getObjects('image').find(obj => obj !== cropRect)
-    if (!image) return
+    if (!cropRect || !canvas) return;
+    const image = canvas.getObjects("image").find((obj) => obj !== cropRect);
+    if (!image) return;
 
-    const cropX = cropRect.left - image.left
-    const cropY = cropRect.top - image.top
+    const cropX = cropRect.left - image.left;
+    const cropY = cropRect.top - image.top;
 
     image.set({
       cropX: cropX / image.scaleX,
       cropY: cropY / image.scaleY,
       width: cropRect.width / image.scaleX,
       height: cropRect.height / image.scaleY,
-    })
+    });
 
-    canvas.remove(cropRect)
-    setCropRect(null)
-    setIsCropping(false)
-    canvas.setActiveObject(image)
-    canvas.renderAll()
-    saveToHistory()
-  }
+    canvas.remove(cropRect);
+    setCropRect(null);
+    setIsCropping(false);
+    canvas.setActiveObject(image);
+    canvas.renderAll();
+    saveToHistory();
+  };
 
   const handleCancelCrop = () => {
     if (cropRect) {
-      canvas.remove(cropRect)
-      setCropRect(null)
-      setIsCropping(false)
-      canvas.renderAll()
+      canvas.remove(cropRect);
+      setCropRect(null);
+      setIsCropping(false);
+      canvas.renderAll();
     }
-  }
+  };
 
   const handleDelete = () => {
-    const active = canvas.getActiveObject()
+    const active = canvas.getActiveObject();
     if (active) {
-      canvas.remove(active)
-      canvas.renderAll()
-      saveToHistory()
+      canvas.remove(active);
+      canvas.renderAll();
+      saveToHistory();
     }
-  }
+  };
 
   const handleUndo = () => {
-    if (history.length < 2) return
-    const prev = [...history]
-    prev.pop()
-    const last = prev[prev.length - 1]
-    setRedoStack(r => [...r, canvas.toJSON()])
-    setHistory(prev)
-    canvas.loadFromJSON(last, () => canvas.renderAll())
-  }
+    if (history.length < 2) return;
+    const prev = [...history];
+    prev.pop();
+    const last = prev[prev.length - 1];
+    setRedoStack((r) => [...r, canvas.toJSON()]);
+    setHistory(prev);
+    canvas.loadFromJSON(last, () => canvas.renderAll());
+  };
 
   const handleRedo = () => {
-    if (redoStack.length === 0) return
-    const last = redoStack.pop()
-    setRedoStack([...redoStack])
-    setHistory(h => [...h, last])
-    canvas.loadFromJSON(last, () => canvas.renderAll())
-  }
+    if (redoStack.length === 0) return;
+    const last = redoStack.pop();
+    setRedoStack([...redoStack]);
+    setHistory((h) => [...h, last]);
+    canvas.loadFromJSON(last, () => canvas.renderAll());
+  };
 
   // Apply Design
   const handleApplyDesign = () => {
     if (canvas) {
-      canvas.discardActiveObject()
-      canvas.renderAll()
+      canvas.discardActiveObject();
+      canvas.renderAll();
 
-      const dataURL = canvas.toDataURL({ format: 'png', quality: 1 })
-      setSelectedDesignURL(dataURL)
-      setIsModified(false)
+      const dataURL = canvas.toDataURL({ format: "png", quality: 1 });
+      setSelectedDesignURL(dataURL);
+      setIsModified(false);
 
-      console.log("🎨 Design applied to 3D view!")
+      console.log(" Design applied to 3D view!");
     }
-  }
+  };
 
   // Save Design
   const handleSaveDesign = async () => {
-    if (!canvas) return
+    if (!canvas) return;
 
-    canvas.discardActiveObject()
-    canvas.renderAll()
+    canvas.discardActiveObject();
+    canvas.renderAll();
 
     // PNG (for preview / 3D)
     const pngData = canvas.toDataURL({
-      format: 'png',
+      format: "png",
       quality: 1,
-      multiplier: 2
-    })
+      multiplier: 2,
+    });
 
-    // JSON (for editing later)
-    const jsonData = JSON.stringify(
-      canvas.toJSON(["layerName"]),
-      null,
-      2
-    )
+    const jsonData = JSON.stringify(canvas.toJSON(["layerName"]), null, 2);
 
-    console.log(jsonData)
+    console.log(jsonData);
 
-    // Download JSON
-    const blob = new Blob([jsonData], { type: 'application/json' })
-    const link = document.createElement('a')
-    link.href = URL.createObjectURL(blob)
-    link.download = 'design.json'
-    link.click()
+    try {
+      // Save design to database
+      const token = localStorage.getItem("customerToken");
+      if (!token) {
+        alert("Please login to save your design");
+        return;
+      }
 
-    // Navigate
-    navigate('/order-form', {
-      state: {
-        designImage: pngData,
+      const designData = {
+        imageURL: pngData,
+        jsonData: jsonData,
         sport,
         fit,
-        style
-      }
-    })
-  }
+        style,
+      };
 
-  const [showElementsPanel, setShowElementsPanel] = useState(false)
+      const response = await fetch(
+        "http://localhost:5000/api/customer/designs",
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ design_data: designData }),
+        }
+      );
+
+      if (response.ok) {
+        const savedDesign = await response.json();
+        console.log("Design saved with ID:", savedDesign.id);
+
+        // Download JSON
+        const blob = new Blob([jsonData], { type: "application/json" });
+        const link = document.createElement("a");
+        link.href = URL.createObjectURL(blob);
+        link.download = "design.json";
+        link.click();
+
+        // Navigate with design ID
+        navigate("/order-form", {
+          state: {
+            designImage: pngData,
+            designId: savedDesign.id,
+            product_id: null,
+            sport,
+            fit,
+            style,
+          },
+        });
+      } else {
+        console.error("Failed to save design");
+        alert("Failed to save design. Please try again.");
+      }
+    } catch (error) {
+      console.error("Error saving design:", error);
+      alert("Error saving design. Please try again.");
+    }
+  };
+
+  const [showElementsPanel, setShowElementsPanel] = useState(false);
 
   const addShape = (type) => {
-    if (!canvas || !fabricInstance) return
+    if (!canvas || !fabricInstance) return;
 
-    let shape
-    let uniqueId = Date.now() + "_" + type
+    let shape;
+    let uniqueId = Date.now() + "_" + type;
 
     switch (type) {
-      case 'rect':
+      case "rect":
         shape = new fabricInstance.Rect({
           left: 100,
           top: 100,
           width: 100,
           height: 60,
-          fill: 'white',
-          stroke: 'black',
+          fill: "white",
+          stroke: "black",
           strokeWidth: 0,
-          layerName: uniqueId
-        })
-        break
-      case 'circle':
+          layerName: uniqueId,
+        });
+        break;
+      case "circle":
         shape = new fabricInstance.Circle({
           left: 120,
           top: 120,
           radius: 40,
-          fill: 'lightgreen',
-          stroke: 'black',
+          fill: "lightgreen",
+          stroke: "black",
           strokeWidth: 0,
-          layerName: uniqueId
-        })
-        break
-      case 'triangle':
+          layerName: uniqueId,
+        });
+        break;
+      case "triangle":
         shape = new fabricInstance.Triangle({
           left: 140,
           top: 140,
           width: 80,
           height: 80,
-          fill: 'orange',
-          stroke: 'black',
+          fill: "orange",
+          stroke: "black",
           strokeWidth: 0,
-          layerName: uniqueId
-        })
-        break
-      case 'line':
+          layerName: uniqueId,
+        });
+        break;
+      case "line":
         shape = new fabricInstance.Line([50, 50, 150, 50], {
           left: 160,
           top: 160,
-          stroke: 'black',
+          stroke: "black",
           strokeWidth: 3,
-          layerName: uniqueId
-        })
-        break
+          layerName: uniqueId,
+        });
+        break;
       default:
-        return
+        return;
     }
 
-    canvas.add(shape)
-    canvas.setActiveObject(shape)
-    canvas.renderAll()
-    saveToHistory()
-  }
+    canvas.add(shape);
+    canvas.setActiveObject(shape);
+    canvas.renderAll();
+    saveToHistory();
+  };
 
   return (
     <div className="w-full max-w-4xl mx-auto p-2 md:p-4">
-      {/* ⭐ Responsive Canvas Container */}
+      {/*  Responsive Canvas Container */}
       <div className="bg-gray-100 rounded-lg p-2 md:p-4 mb-4 overflow-auto">
-        <canvas ref={canvasRef} className="mx-auto border border-gray-300 rounded shadow-lg" />
+        <canvas
+          ref={canvasRef}
+          className="mx-auto border border-gray-300 rounded shadow-lg"
+        />
       </div>
 
-      {/* ⭐ File Upload - Mobile Friendly */}
+      {/*  File Upload - Mobile Friendly */}
       <div className="mb-4 p-3 bg-blue-50 rounded-lg">
         <label className="block text-sm font-medium mb-2 text-gray-700">
           📁 Upload Design Image
@@ -380,33 +425,37 @@ export default function DesignEditor({ userImage, setSelectedDesignURL }) {
         />
       </div>
 
-      {/* ⭐ Crop Mode Banner */}
+      {/*  Crop Mode Banner */}
       {isCropping && (
         <div className="mb-4 p-3 bg-yellow-100 border border-yellow-400 rounded-lg">
           <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-2">
             <div>
-              <div className="font-semibold text-yellow-800">✂️ Crop Mode Active</div>
-              <div className="text-sm text-yellow-700">Adjust the crop area and apply</div>
+              <div className="font-semibold text-yellow-800">
+                ✂️ Crop Mode Active
+              </div>
+              <div className="text-sm text-yellow-700">
+                Adjust the crop area and apply
+              </div>
             </div>
             <div className="flex gap-2 w-full md:w-auto">
               <button
                 onClick={handleApplyCrop}
                 className="flex-1 md:flex-none bg-green-600 text-white px-4 py-2 rounded text-sm hover:bg-green-700"
               >
-                ✓ Apply Crop
+                Apply Crop
               </button>
               <button
                 onClick={handleCancelCrop}
                 className="flex-1 md:flex-none bg-red-600 text-white px-4 py-2 rounded text-sm hover:bg-red-700"
               >
-                ✕ Cancel
+                Cancel
               </button>
             </div>
           </div>
         </div>
       )}
 
-      {/* ⭐ Control Buttons - Responsive Grid */}
+      {/*  Control Buttons - Responsive Grid */}
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2 mb-4">
         <button
           onClick={() => setShowElementsPanel(!showElementsPanel)}
@@ -415,7 +464,7 @@ export default function DesignEditor({ userImage, setSelectedDesignURL }) {
           🎨 Elements
         </button>
 
-        {/* ⭐ Crop Button - Only show when image is loaded */}
+        {/*  Crop Button - Only show when image is loaded */}
         {isImageLoaded && !isCropping && (
           <button
             onClick={handleStartCrop}
@@ -432,7 +481,7 @@ export default function DesignEditor({ userImage, setSelectedDesignURL }) {
           🗑️ Delete
         </button>
 
-        {/* ⭐ Undo/Redo - Only show when changes made */}
+        {/*  Undo/Redo - Only show when changes made */}
         {isModified && history.length > 1 && (
           <button
             onClick={handleUndo}
@@ -459,17 +508,19 @@ export default function DesignEditor({ userImage, setSelectedDesignURL }) {
         </div>
       )}
 
-      {/* ⭐ Color Picker + Opacity - Mobile Friendly */}
+      {/*  Color Picker + Opacity - Mobile Friendly */}
       <div className="flex flex-col md:flex-row gap-4 mb-4 p-3 bg-gray-50 rounded-lg">
         <div className="flex-1">
-          <label className="block text-sm font-medium mb-2 text-gray-700">🎨 Fill Color</label>
+          <label className="block text-sm font-medium mb-2 text-gray-700">
+            🎨 Fill Color
+          </label>
           <input
             type="color"
             onChange={(e) => {
-              const activeObject = canvas?.getActiveObject()
+              const activeObject = canvas?.getActiveObject();
               if (activeObject && activeObject.set) {
-                activeObject.set('fill', e.target.value)
-                canvas.renderAll()
+                activeObject.set("fill", e.target.value);
+                canvas.renderAll();
               }
             }}
             className="w-full h-10 rounded border border-gray-300"
@@ -477,7 +528,9 @@ export default function DesignEditor({ userImage, setSelectedDesignURL }) {
         </div>
 
         <div className="flex-1">
-          <label className="block text-sm font-medium mb-2 text-gray-700">👻 Opacity</label>
+          <label className="block text-sm font-medium mb-2 text-gray-700">
+            👻 Opacity
+          </label>
           <input
             type="range"
             min="0"
@@ -485,11 +538,11 @@ export default function DesignEditor({ userImage, setSelectedDesignURL }) {
             step="0.01"
             defaultValue="1"
             onChange={(e) => {
-              const opacity = parseFloat(e.target.value)
-              const activeObject = canvas?.getActiveObject()
+              const opacity = parseFloat(e.target.value);
+              const activeObject = canvas?.getActiveObject();
               if (activeObject) {
-                activeObject.set('opacity', opacity)
-                canvas.renderAll()
+                activeObject.set("opacity", opacity);
+                canvas.renderAll();
               }
             }}
             className="w-full"
@@ -497,7 +550,7 @@ export default function DesignEditor({ userImage, setSelectedDesignURL }) {
         </div>
       </div>
 
-      {/* ⭐ Action Buttons - Mobile Friendly */}
+      {/*  Action Buttons - Mobile Friendly */}
       <div className="flex flex-col gap-2">
         {isModified ? (
           <>
@@ -526,5 +579,5 @@ export default function DesignEditor({ userImage, setSelectedDesignURL }) {
         )}
       </div>
     </div>
-  )
-} 
+  );
+}

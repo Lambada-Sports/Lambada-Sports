@@ -51,7 +51,7 @@ export default function DesignLoader({ jsonData, onExport }) {
           multiplier: 1,
           enableRetinaScaling: false,
         });
-        console.log("🎉 PNG export complete");
+        console.log(" PNG export complete");
         onExport(pngData, appliedColors);
       }, 300);
     });
